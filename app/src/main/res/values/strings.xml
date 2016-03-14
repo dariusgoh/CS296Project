@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">CS296Project</string>
+
+    <!-- Main Activity -->
+    <string name="activity_enter_interests">Enter Interests</string>
+    <string name="activity_display_interests">Display Interests</string>
+    <string name="activity_activate">Activate</string>
+    <string name="activity_deactivate">Deactivate</string>
+
+    <!-- Enter Interests Activity -->
+    <string name="submit_interests">Submit Interests</string>
+    <string name="confirm_submitted">Successfully submitted interests</string>
+
+</resources>
