@@ -12,18 +12,10 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/activity_enter_interests"
-        android:id="@+id/button_enter_interests"
-        android:onClick="onClickEnterInterests"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
-
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:text="@string/activity_display_interests"
+        android:onClick="onClickMyInterests"
         android:id="@+id/button_display_interests"
-        android:layout_below="@+id/button_enter_interests"
+        android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
 
     <Button
@@ -31,6 +23,7 @@
         android:layout_height="wrap_content"
         android:text="@string/activity_activate"
         android:id="@+id/button_activate"
+        android:onClick="onClickActivate"
         android:layout_below="@+id/button_display_interests"
         android:layout_centerHorizontal="true" />
 

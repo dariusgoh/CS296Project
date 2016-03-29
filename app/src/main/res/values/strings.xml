@@ -2,13 +2,34 @@
     <string name="app_name">CS296Project</string>
 
     <!-- Main Activity -->
-    <string name="activity_enter_interests">Enter Interests</string>
-    <string name="activity_display_interests">Display Interests</string>
+    <string name="activity_display_interests">My Interests</string>
     <string name="activity_activate">Activate</string>
     <string name="activity_deactivate">Deactivate</string>
 
     <!-- Enter Interests Activity -->
     <string name="submit_interests">Submit Interests</string>
     <string name="confirm_submitted">Successfully submitted interests</string>
+    <string name="interests_hint">Enter interest here...</string>
+    <string name="add_interest">Add Interest</string>
+
+    <!-- Display Interests Activity -->
+    <string name="display_load">Loading Interests</string>
+    <string name="back_to_main">Back to Main Menu</string>
+    <string name="add_interests">Add</string>
+    <string name="remove_interest">Delete</string>
+    <string name="my_interests">My Interests</string>
+
+
+    <!-- Create Username Activity -->
+    <string name="sign_in">Sign in with Google</string>
+
+    <string name="create_username">Enter Username Here</string>
+    <string name="create_instructions">Create a Username\n(Max length 16 characters)</string>
+    <string name="submit_username">Submit Username</string>
+    <string name="invalid_username">Username already in use</string>
+    <string name="create_user_failed">Cannot create an account at this time</string>
+    <string name="exit_count">Exiting in 5 seconds</string>
+    <string name="title_activity_activate">Activate</string>
+    <string name="title_activity_my_interests">MyInterests</string>
 
 </resources>
