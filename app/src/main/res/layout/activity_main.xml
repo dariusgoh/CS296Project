@@ -18,20 +18,29 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
 
+    <View
+        android:id="@+id/emptyView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_below="@id/button_display_interests"
+        android:layout_centerInParent="true" />
+
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/activity_activate"
         android:id="@+id/button_activate"
         android:onClick="onClickActivate"
-        android:layout_below="@+id/button_display_interests"
-        android:layout_centerHorizontal="true" />
+        android:layout_toLeftOf="@id/emptyView"
+        android:layout_below="@id/button_display_interests"
+        android:layout_alignParentLeft="true" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/activity_deactivate"
         android:id="@+id/button_deactivate"
-        android:layout_below="@+id/button_activate"
-        android:layout_centerHorizontal="true" />
+        android:layout_below="@id/button_display_interests"
+        android:layout_toRightOf="@id/emptyView"
+        android:layout_alignParentRight="true" />
 </RelativeLayout>

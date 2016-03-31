@@ -39,7 +39,11 @@ public class DisplayInterests extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_display_load);
+        // setContentView(R.layout.activity_display_load);
+
+        if (savedInstanceState != null) {
+            ((GlobalVars) this.getApplication()).restoreState(savedInstanceState);
+        }
 
         if (((GlobalVars) this.getApplication()).getFailed()) {
             System.exit(1);
@@ -48,17 +52,27 @@ public class DisplayInterests extends AppCompatActivity {
         if (user == null) {
             startActivity(new Intent(this, CreateUser.class));
         }
+        setContentView(R.layout.activity_display_interests);
         displayInterests();
         registerOnClick();
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        user.setInterests(interests);
+        ((GlobalVars) this.getApplication()).saveState(savedInstanceState);
+        new AsyncUpdateUser().execute(user);
+    }
 
     private void displayInterests() {
-        setContentView(R.layout.activity_display_interests);
         button_delete = (Button) findViewById(R.id.button_remove);
         button_delete.setEnabled(false);
         list = (ListView) findViewById(R.id.list_interests);
         interests = (ArrayList<String>) user.getInterests();
+        if (interests == null) {
+            interests = new ArrayList<String>();
+        }
         list_adapter = new CustomAdapter(this, R.layout.list_item, interests, selected_indices);
         list.setAdapter(list_adapter);
     }
