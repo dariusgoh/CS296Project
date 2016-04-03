@@ -40,6 +40,7 @@
         android:layout_height="wrap_content"
         android:text="@string/activity_deactivate"
         android:id="@+id/button_deactivate"
+        android:onClick="onClickDeactivate"
         android:layout_below="@id/button_display_interests"
         android:layout_toRightOf="@id/emptyView"
         android:layout_alignParentRight="true" />
