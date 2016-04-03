@@ -67,6 +67,7 @@ public class UserEndpoint {
         //}
         return user;
     }
+    //
 
     /**
      * Inserts a new {@code User}.

@@ -5,7 +5,8 @@
         <servlet-class>com.google.api.server.spi.SystemServiceServlet</servlet-class>
         <init-param>
             <param-name>services</param-name>
-            <param-value>com.cs296.kainrath.cs296project.backend.UserEndpoint</param-value>
+            <param-value>com.cs296.kainrath.cs296project.backend.UserEndpoint,
+                com.cs296.kainrath.cs296project.backend.LocationEndpoint</param-value>
         </init-param>
     </servlet>
     <servlet-mapping>

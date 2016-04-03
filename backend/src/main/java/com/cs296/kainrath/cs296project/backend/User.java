@@ -18,6 +18,7 @@ public class User {
     String user_id;
     @Index
     String user_email;
+    
     Set<String> interests;
 
     public User() {
