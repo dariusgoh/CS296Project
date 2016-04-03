@@ -50,4 +50,11 @@ public class LocationEndpoint {
         logger.info("Calling insertLocation method");
         return location;
     }
+
+    @ApiMethod(name = "deactiveUser")
+    public Location deactivateUser(Location location) {
+        // TODO: Implement this function
+        logger.info("Calling deactiveUser method");
+        return location;
+    }
 }

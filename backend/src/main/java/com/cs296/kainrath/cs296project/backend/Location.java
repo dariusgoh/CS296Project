@@ -8,6 +8,15 @@ public class Location {
     private String user_id;
     private double latitude;
     private double longitude;
+    private boolean active;
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public boolean getActive() {
+        return active;
+    }
 
     public void setUser_id(String user_id) {
         this.user_id = user_id;
