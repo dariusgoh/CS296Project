@@ -9,12 +9,6 @@ public class Location {
     private double latitude;
     private double longitude;
 
-    public Location (double latitude, double longitude, String user_id) {
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.user_id = user_id;
-    }
-
     public void setUser_id(String user_id) {
         this.user_id = user_id;
     }

@@ -44,8 +44,8 @@ public class LocationEndpoint {
      * @param location The object to be added.
      * @return The object to be added.
      */
-    @ApiMethod(name = "insertLocation")
-    public Location insertLocation(Location location) {
+    @ApiMethod(name = "updateLocation")
+    public Location updateLocation(Location location) {
         // TODO: Implement this function
         logger.info("Calling insertLocation method");
         return location;
