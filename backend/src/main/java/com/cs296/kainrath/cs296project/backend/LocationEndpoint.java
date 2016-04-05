@@ -3,7 +3,12 @@ package com.cs296.kainrath.cs296project.backend;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.dao.DaoManager;
+import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.support.ConnectionSource;
 
+import java.sql.SQLException;
 import java.util.logging.Logger;
 
 import javax.inject.Named;
@@ -24,6 +29,7 @@ import javax.inject.Named;
 public class LocationEndpoint {
 
     private static final Logger logger = Logger.getLogger(LocationEndpoint.class.getName());
+    private static final String url = "jdbc:google:mysql://cs296-backend:cs296-app-location-data/location?user=root";
 
     /**
      * This method gets the <code>Location</code> object associated with the specified <code>id</code>.
@@ -46,15 +52,59 @@ public class LocationEndpoint {
      */
     @ApiMethod(name = "updateLocation")
     public Location updateLocation(Location location) {
-        // TODO: Implement this function
         logger.info("Calling insertLocation method");
+        ConnectionSource connectionSource;
+        try {
+            connectionSource = new JdbcConnectionSource(url);
+        } catch (SQLException e) {
+            return null;
+        }
+
+        Dao<Location, String> dao;
+        try {
+            dao = DaoManager.createDao(connectionSource, Location.class);
+        } catch (SQLException e) {
+            return null;
+        }
+        try {
+            dao.createOrUpdate(location);
+        } catch (SQLException e) {
+            return null;
+        }
+        try {
+            connectionSource.close();
+        } catch (SQLException e) {
+
+        }
         return location;
     }
 
     @ApiMethod(name = "deactiveUser")
     public Location deactivateUser(Location location) {
-        // TODO: Implement this function
         logger.info("Calling deactiveUser method");
+        ConnectionSource connectionSource;
+        try {
+            connectionSource = new JdbcConnectionSource(url);
+        } catch (SQLException e) {
+            return null;
+        }
+
+        Dao<Location, String> dao;
+        try {
+            dao = DaoManager.createDao(connectionSource, Location.class);
+        } catch (SQLException e) {
+            return null;
+        }
+        try {
+            dao.delete(location);
+        } catch (SQLException e) {
+            return null;
+        }
+        try {
+            connectionSource.close();
+        } catch (SQLException e) {
+
+        }
         return location;
     }
 }

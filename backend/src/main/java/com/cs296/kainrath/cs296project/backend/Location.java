@@ -1,21 +1,30 @@
 package com.cs296.kainrath.cs296project.backend;
 
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
+
 /**
  * Created by kainrath on 4/3/16.
  */
+
+@DatabaseTable(tableName = "Location")
 public class Location {
 
+    @DatabaseField(id = true)
     private String user_id;
+
+    @DatabaseField(index = true)
     private double latitude;
+
+    @DatabaseField(index = true)
     private double longitude;
-    private boolean active;
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
+    public Location () { }
 
-    public boolean getActive() {
-        return active;
+    public Location (String user_id, double latitude, double longitude) {
+        this.user_id = user_id;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public void setUser_id(String user_id) {
