@@ -21,6 +21,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     private User user = null;
 
+    private AsyncUpdateLocation asyncUpdateLoc;
+
     private LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
     private LocationListener locationListener = new LocationListener() {
@@ -29,6 +31,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             // send information to the database
             String msg = location.getLatitude() + " : "
                     + location.getLongitude() + "location updated!";
+
+            if (asyncUpdateLoc == null) {
+                asyncUpdateLoc = new AsyncUpdateLocation(user.getId());
+            }
+            asyncUpdateLoc.execute(location.getLatitude(), location.getLongitude());
 
             Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
         }
