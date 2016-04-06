@@ -50,7 +50,7 @@ public class LocationEndpoint {
     /**
      * This inserts a new <code>Location</code> object.
      *
-     * @param user_id The user to be update.
+     * @param user_id The user to be updated.
      * @param latitude The latitude of the user.
      * @param longitude The longitude of the user.
      * @return The object to be added.
@@ -129,9 +129,8 @@ public class LocationEndpoint {
         double dLong = Math.atan2(1 * ang_sin * cos_lat1, ang_cos - sin_lat1 * sin_lat1); // Lat2 = Lat 1;
                                // 1 = sin(90)
         double;
-
         QueryBuilder<Location, String> queryBuilder = dao.queryBuilder();
     }
     */
-
 }
+
