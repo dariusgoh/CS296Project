@@ -78,7 +78,7 @@ public class LocationEndpoint {
             return null;
         }
         // Search for nearby users
-        //findUsersInRadius(dao);
+        // findUsersInRadius(dao);
         try {
             connectionSource.close();
         } catch (SQLException e) {
@@ -121,10 +121,12 @@ public class LocationEndpoint {
     /*
     private void findUsersInRadius(Dao<Location, String> dao, Location location) {
         double ang_dist = DIST / RAD_EARTH;
-        double sin_lat1 = Math.sin()
+        double sin_lat1 = Math.sin();
         double dLat = ;
         double dLong = ;
         QueryBuilder<Location, String> queryBuilder = dao.queryBuilder();
 
-    }*/
+    }
+    */
+>>>>>>> 6405e180e4c2099e8db7d141f85066a199341e3c
 }
