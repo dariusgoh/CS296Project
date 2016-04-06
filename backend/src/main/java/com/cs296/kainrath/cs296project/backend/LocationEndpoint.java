@@ -50,7 +50,9 @@ public class LocationEndpoint {
     /**
      * This inserts a new <code>Location</code> object.
      *
-     * @param location The object to be added.
+     * @param user_id The user to be update.
+     * @param latitude The latitude of the user.
+     * @param longitude The longitude of the user.
      * @return The object to be added.
      */
     @ApiMethod(name = "updateLocation")
@@ -76,7 +78,7 @@ public class LocationEndpoint {
             return null;
         }
         // Search for nearby users
-        findUsersInRadius(dao);
+        //findUsersInRadius(dao, latitude, longitude);
         try {
             connectionSource.close();
         } catch (SQLException e) {
@@ -116,12 +118,20 @@ public class LocationEndpoint {
         return location;
     }
 
-    private void findUsersInRadius(Dao<Location, String> dao, Location location) {
+    /*
+    private void findUsersInRadius(Dao<Location, String> dao, double latitude, double longitude) {
         double ang_dist = DIST / RAD_EARTH;
-        double sin_lat1 = Math.sin()
-        double dLat = ;
-        double dLong = ;
-        QueryBuilder<Location, String> queryBuilder = dao.queryBuilder();
+        double ang_cos = Math.cos(ang_dist);
+        double ang_sin = Math.sin(ang_dist);
+        double sin_lat1 = Math.sin(latitude);
+        double cos_lat1 = Math.cos(latitude);
+        double dLat = Math.asin(sin_lat1 * ang_cos + cos_lat1 * ang_sin * 1) - latitude; // 1 = Cos(0)
+        double dLong = Math.atan2(1 * ang_sin * cos_lat1, ang_cos - sin_lat1 * sin_lat1); // Lat2 = Lat 1;
+                               // 1 = sin(90)
+        double;
 
+        QueryBuilder<Location, String> queryBuilder = dao.queryBuilder();
     }
+    */
+
 }

@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             Toast.makeText(getBaseContext(), "turn GPS on! ",
                     Toast.LENGTH_SHORT).show();
         }
-    }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
