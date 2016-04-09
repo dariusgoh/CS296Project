@@ -40,7 +40,7 @@ public class AsyncDeactivateUser extends AsyncTask<String, Void, Void> {
             locationService = builder.build();
         }
         try {
-            locationService.deactiveUser(params[0]).execute();
+            locationService.deactivateUser(params[0]).execute();
         } catch (IOException e) {
 
         }

@@ -26,6 +26,10 @@ public class CreateUser extends AppCompatActivity implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (((GlobalVars) this.getApplication()).getUser() != null) {
+            startActivity(new Intent(this, MainActivity.class));
+        }
+
         setContentView(R.layout.activity_create_user);
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -69,7 +73,7 @@ public class CreateUser extends AppCompatActivity implements
             GoogleSignInAccount acct = result.getSignInAccount();
             Toast.makeText(this, "Welcome " + acct.getEmail(), Toast.LENGTH_LONG).show();
             new AsyncGetUser(this).execute(acct.getId(), acct.getEmail());
-            finish();
+            setContentView(R.layout.activity_loading_user);
             //startActivity(new Intent(this, MainActivity.class));
         } else {
             Toast.makeText(this, "Unable to sign in", Toast.LENGTH_SHORT).show();

@@ -1,6 +1,8 @@
 package com.cs296.kainrath.cs296project;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 
 import com.cs296.kainrath.cs296project.backend.userApi.UserApi;
@@ -14,7 +16,7 @@ import java.io.IOException;
 /**
  * Created by kainrath on 3/28/16.
  */
-public class AsyncGetUser extends AsyncTask<String, Void, Void> {
+public class AsyncGetUser extends AsyncTask<String, Void, User> {
     private UserApi userService = null;
     private Activity activity = null;
 
@@ -23,7 +25,7 @@ public class AsyncGetUser extends AsyncTask<String, Void, Void> {
     }
 
     @Override
-    protected Void doInBackground(String... params) {
+    protected User doInBackground(String... params) {
         if (userService == null) {
             UserApi.Builder builder = new UserApi.Builder(AndroidHttp.newCompatibleTransport(),
                     new AndroidJsonFactory(), null)
@@ -45,7 +47,7 @@ public class AsyncGetUser extends AsyncTask<String, Void, Void> {
 
             userService = builder.build();
         }
-        User user;
+        User user = null;
         try {
             user = userService.get(params[0]).execute();
             if (user == null) {
@@ -58,6 +60,15 @@ public class AsyncGetUser extends AsyncTask<String, Void, Void> {
         } catch (IOException e) {
             ((GlobalVars) activity.getApplication()).setFailed(true);
         }
-        return null;
+        return user;
+    }
+
+    @Override
+    protected void onPostExecute(User user) {
+        if (user == null) {
+            activity.startActivity(new Intent(activity.getBaseContext(), CreateUser.class));
+        } else {
+            activity.startActivity(new Intent(activity.getBaseContext(), MainActivity.class));
+        }
     }
 }

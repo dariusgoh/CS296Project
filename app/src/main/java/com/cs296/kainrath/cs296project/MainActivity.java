@@ -7,29 +7,33 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.content.Context;
-import android.content.Intent;
+import android.location.LocationProvider;
 import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.cs296.kainrath.cs296project.backend.userApi.model.User;
 
-import java.util.ArrayList;
-
 public class MainActivity extends AppCompatActivity {
 
-    private User user = null;
+    private User user;
     private Button activate;
     private Button deactivate;
 
-    private AsyncUpdateLocation asyncUpdateLoc;
+    // For debug purposes
+    private TextView location_text;
+    private TextView avail_text;
+    private TextView user_text;
+    private TextView count_text;
 
-    private LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+    int count;
+
+    private LocationManager locationManager;
 
     private MyLocationListener mylistener;
 
@@ -38,19 +42,24 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onLocationChanged(Location location) {
             // send information to the database
-            String msg = location.getLatitude() + " : "
-                    + location.getLongitude() + "location updated!";
 
-            if (asyncUpdateLoc == null) {
-                asyncUpdateLoc = new AsyncUpdateLocation(user.getId());
-            }
-            asyncUpdateLoc.execute(location.getLatitude(), location.getLongitude());
+            count_text.setText("" + count);
+            location_text.setText(location.getLatitude() + ", " + location.getLongitude());
+            avail_text.setText("Available");
+            ++count;
+            new AsyncUpdateLocation(user.getId(), MainActivity.this).execute(location.getLatitude(), location.getLongitude());
 
-            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
         }
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
+            if (status == LocationProvider.OUT_OF_SERVICE) {
+                avail_text.setText("Out of service");
+            } else if (status == LocationProvider.TEMPORARILY_UNAVAILABLE) {
+                avail_text.setText("Temporarily Unavailable");
+            } else { // status == LocationProvider.AVAILABLE
+                avail_text.setText("Available");
+            }
         }
 
         @Override
@@ -67,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getBaseContext(), "turn GPS on! ",
                     Toast.LENGTH_SHORT).show();
         }
-    };
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,9 +95,19 @@ public class MainActivity extends AppCompatActivity {
         }
         setContentView(R.layout.activity_main);
 
-        activate = (Button)findViewById(R.id.button_activate);
-        deactivate = (Button)findViewById(R.id.button_deactivate);
+        activate = (Button) findViewById(R.id.button_activate);
+        deactivate = (Button) findViewById(R.id.button_deactivate);
         deactivate.setEnabled(false);
+
+        location_text = (TextView) findViewById(R.id.location_text);
+        avail_text = (TextView) findViewById(R.id.availability_text);
+        user_text = (TextView) findViewById(R.id.user_id_text);
+        count_text = (TextView) findViewById(R.id.update_count_text);
+        //location_text.setText("Deactivated");
+        //avail_text.setText("Deactivated");
+        user_text.setText(user.getEmail());
+        mylistener = new MyLocationListener();
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
     }
 
     @Override
@@ -102,20 +121,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickActivate(View view) {
-        activate.setEnabled(false);
+
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (PackageManager.PERMISSION_GRANTED == permissionCheck) {
-
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 600000, 1609, mylistener);
-
-            Toast.makeText(getBaseContext(), "activated! ",
-                    Toast.LENGTH_SHORT).show();
+            count = 1;
+            activate.setEnabled(false);
+            deactivate.setEnabled(true);
+            count_text.setText("0");
+            location_text.setText("Searching");
+            avail_text.setText("Searching");
+            //
+            //                                                                   // 600000
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1609, mylistener);
+        } else {
+            deactivate.setText("0");
+            location_text.setText("Failed to activate");
+            avail_text.setText("Failed to activate");
         }
-        else {
-            Toast.makeText(getBaseContext(), "please allow location permissions ",
-                    Toast.LENGTH_SHORT).show();
-        }
-        deactivate.setEnabled(true);
     }
 
     public void onClickDeactivate(View view) {
@@ -126,8 +148,9 @@ public class MainActivity extends AppCompatActivity {
 
             new AsyncDeactivateUser().execute(user.getId());
 
-            Toast.makeText(getBaseContext(), "Deactivated! ",
-                    Toast.LENGTH_SHORT).show();
+            count_text.setText("Deactivated");
+            location_text.setText("Deactivated");
+            avail_text.setText("Deactivated");
         }
         else {
             Toast.makeText(getBaseContext(), "please allow location permissions ",
@@ -137,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
         activate.setEnabled(true);
 
     }
-
 }
 
 

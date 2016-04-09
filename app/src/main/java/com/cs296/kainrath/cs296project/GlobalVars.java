@@ -11,8 +11,9 @@ import java.util.ArrayList;
  * Created by kainrath on 3/24/16.
  */
 public class GlobalVars extends Application {
-    private User user = null;
+    private User user;
     private boolean failed = false;
+    private boolean has_user = false;
 
     private static final String email = "user_email";
     private static final String id = "user_id";
