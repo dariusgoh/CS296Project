@@ -3,14 +3,12 @@ package com.cs296.kainrath.cs296project.backend;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
-import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.dao.DaoManager;
-import com.j256.ormlite.jdbc.JdbcConnectionSource;
-import com.j256.ormlite.stmt.QueryBuilder;
-import com.j256.ormlite.stmt.Where;
-import com.j256.ormlite.support.ConnectionSource;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -32,8 +30,9 @@ import javax.inject.Named;
 )
 public class LocationEndpoint {
 
+    private static final int MYSQL_DUPLICATE_CODE = 1062;
     private static final Logger logger = Logger.getLogger(LocationEndpoint.class.getName());
-    private static final String url = "jdbc:mysql://cs296-backend:cs296-app-location-data/UserLocation/location?user=root";
+    private static final String url = "jdbc:google:mysql://cs296-backend:cs296-app-location-data/UserLocation?user=root";
     private static final double DIST = 50;
     private static final double RAD_EARTH = 6371000;
     private static final double ANG_DIST = DIST / RAD_EARTH;
@@ -41,37 +40,34 @@ public class LocationEndpoint {
     /**
      * This method gets the <code>Location</code> object associated with the specified <code>id</code>.
      *
-     * @param id The id of the object to be returned.
+     * @param user_id The id of the object to be returned.
      * @return The <code>Location</code> associated with <code>id</code>.
      */
     @ApiMethod(name = "getLocation")
-    public Location getLocation(@Named("id") String id) {
+    public Location getLocation(@Named("user_id") String user_id) {
         logger.info("Calling getLocation method");
-        ConnectionSource connectionSource;
+        Location location = null;
         try {
-            connectionSource = new JdbcConnectionSource(url);
-        } catch (SQLException e) {
-            return null;
-        }
-        Dao<Location, String> dao;
-        try {
-            dao = DaoManager.createDao(connectionSource, Location.class);
-        } catch (SQLException e) {
-            return null;
-        }
-        Location location;
-        try {
-            location = dao.queryForId(id);
-        } catch (SQLException e) {
-            return null;
-        }
-        try {
-            connectionSource.close();
-        } catch (SQLException e) {
+            // Connect
+            Class.forName("com.mysql.jdbc.GoogleDriver");
+            Connection conn = DriverManager.getConnection(url);
 
+            String find_query = "SELECT * FROM Location WHERE user_id=\"" + user_id + "\"";
+            Statement stmt = conn.createStatement();
+            ResultSet result = stmt.executeQuery(find_query);
+            if (result.next()) {
+                location = new Location();
+                location.setUser_id(user_id);
+                location.setLatitude(result.getDouble(Location.LAT_FIELD));
+                location.setLongitude(result.getDouble(Location.LONG_FIELD));
+            }
+
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
         return location;
-
     }
 
     /**
@@ -83,87 +79,80 @@ public class LocationEndpoint {
      * @return The object to be added.
      */
     @ApiMethod(name = "updateLocation")
-    public List<Location> updateLocation(@Named("user_id") String user_id, @Named("latitude") double latitude, @Named("longitude") double longitude) {
+    public LocationList updateLocation(@Named("user_id") String user_id, @Named("latitude") double latitude, @Named("longitude") double longitude) {
         Location location = new Location(user_id, latitude, longitude);
         logger.info("Calling insertLocation method");
-        ConnectionSource connectionSource;
-        List<Location> nearby_users = new ArrayList<Location>();
-        nearby_users.add(location); // 1
-        String err_msg;
-        int err_code;
-        String err_sql;
+
+        Connection conn = null;
         try {
-            connectionSource = new JdbcConnectionSource(url);
+            Class.forName("com.mysql.jdbc.GoogleDriver");
+            conn = DriverManager.getConnection(url);
+
+            Statement stmt_insert = conn.createStatement();
+            String insert = "INSERT INTO Location (user_id, latitude, longitude) VALUES " +
+                            "(\"" + user_id + "\", " + latitude + ", " + longitude + ")";
+            stmt_insert.executeUpdate(insert);
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
         } catch (SQLException e) {
-            // return null
-            return nearby_users;
+            if (e.getErrorCode() == MYSQL_DUPLICATE_CODE && conn != null) { // Already in database, just update
+                try {
+                    String update = "UPDATE Location SET latitude=" + latitude + ", longitude=" + longitude +
+                                            " WHERE user_id=\"" + user_id + "\"";
+                    Statement stmt_update = conn.createStatement();
+                    stmt_update.executeUpdate(update);
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    return null;
+                }
+            } else {
+                e.printStackTrace();
+                return null;
+            }
         }
 
-        Dao<Location, String> dao;
-        nearby_users.add(location); // 2
-        try {
-            dao = DaoManager.createDao(connectionSource, Location.class);
-        } catch (SQLException e) {
-            // return null
-            return nearby_users;
-        }
+        // Find nearby users
+        LocationList locations = findUsersInRadius(conn, location);
 
-        nearby_users.add(location); // 3
+        // Close connection
         try {
-            dao.createOrUpdate(location);
+            conn.close();
         } catch (SQLException e) {
-            err_msg = e.getMessage();
-            err_code = e.getErrorCode();
-            err_sql = e.getSQLState();
+            e.printStackTrace();
         }
-        // Search for nearby users every time you update your position
-        //List<Location> nearby_users = findUsersInRadius(dao, location);
-        nearby_users.add(location);  // 4
-        try {
-            connectionSource.close();
-        } catch (SQLException e) {
-            // return null
-            return nearby_users;
-        }
-        nearby_users.add(location);
-        return nearby_users;
-        //return null;
-
+        return locations;
     }
 
     @ApiMethod(name = "deactivateUser")
-    public Location deactivateUser(@Named("user_id") String user_id) {
-        Location location = new Location();
-        location.setUser_id(user_id);
+    public void deactivateUser(@Named("user_id") String user_id) {
+        // Location location = new Location();
+        // location.setUser_id(user_id);
         logger.info("Calling deactivateUser method");
-        ConnectionSource connectionSource;
         try {
-            connectionSource = new JdbcConnectionSource(url);
-        } catch (SQLException e) {
-            return null;
-        }
+            // Connect
+            Class.forName("com.mysql.jdbc.GoogleDriver");
+            Connection conn = DriverManager.getConnection(url);
 
-        Dao<Location, String> dao;
-        try {
-            dao = DaoManager.createDao(connectionSource, Location.class);
-        } catch (SQLException e) {
-            return null;
-        }
-        try {
-            dao.delete(location);
-        } catch (SQLException e) {
-            return null;
-        }
-        try {
-            connectionSource.close();
-        } catch (SQLException e) {
+            // Delete
+            String delete = "DELETE FROM Location WHERE user_id=\"" + user_id + "\"";
+            Statement stmt = conn.createStatement();
+            stmt.executeUpdate(delete);
 
+            // Close connection
+            conn.close();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            int err_code = e.getErrorCode();
+            String err_msg = e.getMessage();
+            e.printStackTrace();
         }
-        return location;
     }
 
 
-    private List<Location> findUsersInRadius(Dao<Location, String> dao, Location user_loc) {
+    private LocationList findUsersInRadius(Connection conn, Location user_loc) {
         double latitude = user_loc.getLatitude();
         double longitude = user_loc.getLongitude();
         double ang_cos = Math.cos(ANG_DIST);
@@ -178,15 +167,23 @@ public class LocationEndpoint {
         double long1 = longitude + dLong;
         double long2 = longitude - dLong;
 
-        Where<Location, String> where = dao.queryBuilder().where();
-        List<Location> nearby_users;
+        String query = "SELECT * FROM Location WHERE latitude BETWEEN " + lat2 + " AND " + lat1 +
+                        " AND longitude BETWEEN " + long2 + " AND " + long1;
+        List<Location> nearby_users = new ArrayList<Location>();
         try {
-            nearby_users = where.between(Location.LAT_FIELD, lat2, lat1)
-                    .between(Location.LONG_FIELD, long2, long1)
-                    .and(2) // and the previous 2 betweens
-                    .query();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+
+            while (rs.next() && !rs.getString(Location.ID_FIELD).equals(user_loc.getUser_id())) {
+                Location loc = new Location();
+                loc.setUser_id(rs.getString(Location.ID_FIELD));
+                loc.setLatitude(rs.getDouble(Location.LAT_FIELD));
+                loc.setLongitude(rs.getDouble(Location.LONG_FIELD));
+                nearby_users.add(loc);
+            }
+
         } catch (SQLException e) {
-            return null;
+            e.printStackTrace();
         }
 
         // Remove users who are not in radius
@@ -195,14 +192,10 @@ public class LocationEndpoint {
                 nearby_users.remove(i);
             }
         }
-        return nearby_users;
+        LocationList users = new LocationList();
+        users.setLocations(nearby_users);
+        return users;
     }
-
-    /*
-    SELECT * FROM UserLocation.Location
-    WHERE Latidude BETWEEN lat2 AND lat1
-    AND Longitude BETWEEN long2 and long1
-     */
 }
 
 

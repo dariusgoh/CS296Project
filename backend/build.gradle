@@ -31,6 +31,7 @@ dependencies {
     appengineSdk 'com.google.appengine:appengine-java-sdk:1.9.32'
     compile files('src/main/webapp/WEB-INF/ormlite-core-4.48.jar')
     compile files('src/main/webapp/WEB-INF/ormlite-jdbc-4.48.jar')
+    compile files('src/main/webapp/WEB-INF/mysql-connector-java-5.1.38-bin.jar')
 }
 
 appengine {
