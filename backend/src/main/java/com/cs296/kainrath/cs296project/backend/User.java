@@ -54,4 +54,6 @@ public class User {
     }
 
     public void addInterests(String interest) { this.interests.add(interest); }
+
+    public void setInterests(Set<String> interests) { this.interests = interests; }
 }

@@ -6,7 +6,8 @@ import android.widget.Toast;
 
 import com.cs296.kainrath.cs296project.backend.locationApi.LocationApi;
 import com.cs296.kainrath.cs296project.backend.locationApi.model.Location;
-import com.cs296.kainrath.cs296project.backend.locationApi.model.LocationList;
+import com.cs296.kainrath.cs296project.backend.locationApi.model.UserList;
+import com.cs296.kainrath.cs296project.backend.locationApi.model.User;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
@@ -17,7 +18,7 @@ import java.util.List;
 /**
  * Created by Darius on 4/5/2016.
  */
-public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<Location>> {
+public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
     private LocationApi locationService = null;
     private String userID = null;
     private Context context = null;
@@ -28,7 +29,7 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<Location>>
     }
 
     @Override  // Runs in a separate thread
-    protected List<Location> doInBackground(Double... params) {
+    protected List<User> doInBackground(Double... params) {
         if (locationService == null) {
             LocationApi.Builder builder = new LocationApi.Builder(AndroidHttp.newCompatibleTransport(),
                     new AndroidJsonFactory(), null)
@@ -50,28 +51,26 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<Location>>
 
             locationService = builder.build();
         }
-        List<Location> nearby_users = null;
+        UserList nearby_users = null;
         try {
             // locationService.updateLocation(userID, params[0], params[1]).execute();
-            nearby_users = locationService.updateLocation(userID, params[0], params[1]).execute().getLocations();
+            nearby_users = locationService.updateLocation(userID, params[0], params[1]).execute();
         } catch (IOException e) {
 
         }
-        return nearby_users;
+        if (nearby_users != null) {
+            return nearby_users.getUsers();
+        } else {
+            return null;
+        }
     }
 
     @Override
-    protected void onPostExecute(List<Location> nearby_users) {
-        if (nearby_users == null) { // Failed to check nearby users
-            Toast.makeText(context, "Failed to check for nearby users", Toast.LENGTH_SHORT).show();
-        } else if (nearby_users.size() == 0) {
-            Toast.makeText(context, "No nearby users", Toast.LENGTH_SHORT).show();
+    protected void onPostExecute(List<User> nearby_users) {
+        if (nearby_users == null || nearby_users.size() == 0) {
+            Toast.makeText(context, "No nearby users with matching interests", Toast.LENGTH_SHORT).show();
         } else {
-            String toast_text = "";
-            for (int i = 0; i < nearby_users.size(); ++i) {
-                toast_text += "User " + nearby_users.get(i).getUserId() + "\n";
-            }
-            Toast.makeText(context, toast_text, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, nearby_users.size() + " matching user(s)!", Toast.LENGTH_SHORT).show();
         }
     }
 }

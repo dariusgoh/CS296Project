@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.inject.Named;
@@ -79,7 +80,7 @@ public class LocationEndpoint {
      * @return The object to be added.
      */
     @ApiMethod(name = "updateLocation")
-    public LocationList updateLocation(@Named("user_id") String user_id, @Named("latitude") double latitude, @Named("longitude") double longitude) {
+    public UserList updateLocation(@Named("user_id") String user_id, @Named("latitude") double latitude, @Named("longitude") double longitude) {
         Location location = new Location(user_id, latitude, longitude);
         logger.info("Calling insertLocation method");
 
@@ -114,7 +115,16 @@ public class LocationEndpoint {
         }
 
         // Find nearby users
-        LocationList locations = findUsersInRadius(conn, location);
+        List<String> nearby_user_ids = findUsersInRadius(conn, location);
+        UserList nearby_users = null;
+        if (!nearby_user_ids.isEmpty()) {
+            // Get users within radius
+            nearby_users = UserEndpoint.getAll(nearby_user_ids);
+            User curr_user = UserEndpoint.getOne(user_id);
+
+            // Check for interest match, remove users who dont match
+            nearby_users.setUsers(findMatchingUsers(curr_user, nearby_users.getUsers()));
+        }
 
         // Close connection
         try {
@@ -122,7 +132,7 @@ public class LocationEndpoint {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return locations;
+        return nearby_users;
     }
 
     @ApiMethod(name = "deactivateUser")
@@ -145,14 +155,26 @@ public class LocationEndpoint {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (SQLException e) {
-            int err_code = e.getErrorCode();
-            String err_msg = e.getMessage();
             e.printStackTrace();
         }
     }
 
+    private List<User> findMatchingUsers(User curr_user, List<User> nearby_users) {
+        Set<String> curr_interests = curr_user.getInterests();
+        Set<String> other_interests;
+        for (int i = nearby_users.size() - 1; i >= 0; --i) {
+            other_interests = nearby_users.get(i).getInterests();
+            other_interests.retainAll(curr_interests);
+            if (other_interests.size() == 0) {  // No matching interests
+                nearby_users.remove(i);
+            } else {
+                nearby_users.get(i).setInterests(other_interests);
+            }
+        }
+        return nearby_users;
+    }
 
-    private LocationList findUsersInRadius(Connection conn, Location user_loc) {
+    private List<String> findUsersInRadius(Connection conn, Location user_loc) {
         double latitude = user_loc.getLatitude();
         double longitude = user_loc.getLongitude();
         double ang_cos = Math.cos(ANG_DIST);
@@ -169,7 +191,7 @@ public class LocationEndpoint {
 
         String query = "SELECT * FROM Location WHERE latitude BETWEEN " + lat2 + " AND " + lat1 +
                         " AND longitude BETWEEN " + long2 + " AND " + long1;
-        List<Location> nearby_users = new ArrayList<Location>();
+        List<Location> nearby_users_loc = new ArrayList<Location>();
         try {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query);
@@ -179,22 +201,21 @@ public class LocationEndpoint {
                 loc.setUser_id(rs.getString(Location.ID_FIELD));
                 loc.setLatitude(rs.getDouble(Location.LAT_FIELD));
                 loc.setLongitude(rs.getDouble(Location.LONG_FIELD));
-                nearby_users.add(loc);
+                nearby_users_loc.add(loc);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        // Remove users who are not in radius
-        for (int i = nearby_users.size() - 1; i >= 0; --i) {
-            if (user_loc.distanceTo(nearby_users.get(i)) > DIST) {
-                nearby_users.remove(i);
+        List<String> nearby_user_ids = new ArrayList<String>();
+        // Add users who are in radius
+        for (int i = nearby_users_loc.size() - 1; i >= 0; --i) {
+            if (user_loc.distanceTo(nearby_users_loc.get(i)) <= DIST) {
+                nearby_user_ids.add(nearby_users_loc.get(i).getUser_id());
             }
         }
-        LocationList users = new LocationList();
-        users.setLocations(nearby_users);
-        return users;
+        return nearby_user_ids;
     }
 }
 

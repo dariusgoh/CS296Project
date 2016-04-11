@@ -13,6 +13,7 @@ import com.googlecode.objectify.cmd.Query;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -46,6 +47,46 @@ public class UserEndpoint {
     static {
         // Typically you would register this inside an OfyServive wrapper. See: https://code.google.com/p/objectify-appengine/wiki/BestPractices
         ObjectifyService.register(User.class);
+    }
+
+    /**
+     * Returns a UserList with matching users
+     *
+     * @param
+     */
+    @ApiMethod(
+            name = "getAll",
+            path = "user",
+            httpMethod = ApiMethod.HttpMethod.GET
+    )
+    public static UserList getAll(@Named("user_ids") List<String> user_ids) {
+        // Get all users with id in list
+        Map<String, User> users_map = ofy().load().type(User.class).ids(user_ids);
+        List<User> users_list = new ArrayList<User>();
+        users_list.addAll(users_map.values());
+        UserList users = new UserList();
+        users.setUsers(users_list);
+        return users;
+    }
+
+    /**
+     * Returns the {@link User} with the corresponding ID.
+     *
+     * @param user_id the ID of the entity to be retrieved
+     * @return the entity with the corresponding ID
+     * @throws NotFoundException if there is no {@code User} with the provided ID.
+     */
+    @ApiMethod(
+            name = "get",
+            path = "user/{user_id}",
+            httpMethod = ApiMethod.HttpMethod.GET)
+    public static User getOne(@Named("user_id") String user_id) {
+        logger.info("Getting User with ID: " + user_id);
+        User user = ofy().load().type(User.class).id(user_id).now();
+        //if (user == null) {
+        // throw new NotFoundException("Could not find User with ID: " + user_id);
+        //}
+        return user;
     }
 
     /**
