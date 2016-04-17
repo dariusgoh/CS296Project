@@ -47,7 +47,7 @@ public class RegistrationIntentService extends IntentService {
                 User user = null;
                 String email = intent.getStringExtra(CreateUser.EMAIL);
                 String user_id = intent.getStringExtra(CreateUser.USER_ID);
-                while ((user = getTokenAndUserData(user_id, email)) != null & delayTime < MAX_DELAY) {
+                while ((user = getTokenAndUserData(user_id, email)) == null & delayTime < MAX_DELAY) {
                     try {
                         Thread.sleep(delayTime);
                     } catch (InterruptedException e) {
@@ -84,15 +84,19 @@ public class RegistrationIntentService extends IntentService {
 
         // Send it to the DB and store it
         if (userApi == null) {
+            Log.d(TAG, "userApi connection is NULL");
             UserApi.Builder builder = new UserApi.Builder(AndroidHttp.newCompatibleTransport(),
                     new AndroidJsonFactory(), null)
                     .setRootUrl("https://cs296-backend.appspot.com/_ah/api/");
 
             userApi = builder.build();
+        } else {
+            Log.d(TAG, "userApi is connected");
         }
 
         User user = null;
         try {
+            Log.d(TAG, "Attempting to send token to DB");
             user = userApi.get(user_id, email, token).execute();
             Log.d(TAG, "Sent token to DB result, user = " + user);
         } catch (IOException e) {

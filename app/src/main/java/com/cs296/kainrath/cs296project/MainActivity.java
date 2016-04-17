@@ -33,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
     // For debug purposes
 
     private TextView nearby_user_names;
+    private TextView user_info;
+    private TextView lat_long_info;
 
     int count;
 
@@ -56,7 +58,9 @@ public class MainActivity extends AppCompatActivity {
         activate = (Button) findViewById(R.id.button_activate);
         deactivate = (Button) findViewById(R.id.button_deactivate);
         nearby_user_names = (TextView) findViewById(R.id.nearby_user_names);
-
+        user_info = (TextView) findViewById(R.id.user_info_text);
+        user_info.setText(user.getEmail());
+        lat_long_info = (TextView) findViewById(R.id.lat_long_text);
         nearby_user_names.setText(((GlobalVars) this.getApplication()).getNearbyUserString());
         if (LocationTrackerService.isInstanceCreated()) {
             activate.setEnabled(false);
@@ -103,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickRefresh(View view) {
         nearby_user_names.setText(((GlobalVars) this.getApplication()).getNearbyUserString());
+        lat_long_info.setText("Lat/Long: " + ((GlobalVars) this.getApplication()).getLat() + ":" + ((GlobalVars) this.getApplication()).getLong());
     }
     /*
     public void onClickRefresh(View view) {
