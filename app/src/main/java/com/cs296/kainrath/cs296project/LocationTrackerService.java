@@ -84,6 +84,7 @@ public class LocationTrackerService extends Service {
         if (locationManager != null) {
             try {
                 locationManager.removeUpdates(locListener);
+                new AsyncDeactivateUser().execute(user_id);
             } catch (SecurityException e) {
                 // Already checked for permissions in MainActivity
             }
