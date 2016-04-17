@@ -16,11 +16,27 @@ public class GlobalVars extends Application {
     private List<User> nearby_users = null;
     private User user = null;
     private boolean failed = false;
+
+    private double latit = 0;
+    private double longit = 0;
     // private boolean has_user = false;
 
     private static final String email = "user_email";
     private static final String id = "user_id";
     private static final String interests = "interests";
+
+    public void setLatLong(double latitude, double longitude) {
+        latit = latitude;
+        longit = longitude;
+    }
+
+    public double getLat() {
+        return latit;
+    }
+
+    public double getLong() {
+        return longit;
+    }
 
     public void setUser(User user) { this.user = user; }
 
