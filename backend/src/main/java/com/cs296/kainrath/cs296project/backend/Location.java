@@ -1,27 +1,20 @@
 package com.cs296.kainrath.cs296project.backend;
 
 
-import com.j256.ormlite.field.DatabaseField;
-import com.j256.ormlite.table.DatabaseTable;
-
 
 /**
  * Created by kainrath on 4/3/16.
  */
 
-@DatabaseTable(tableName = "Location")
 public class Location {
     public static final String LAT_FIELD = "latitude";
     public static final String LONG_FIELD = "longitude";
     public static final String ID_FIELD = "user_id";
 
-    @DatabaseField(id = true, columnName = ID_FIELD)
     private String user_id;
 
-    @DatabaseField(index = true, columnName = LAT_FIELD)
     private double latitude;
 
-    @DatabaseField(index = true, columnName = LONG_FIELD)
     private double longitude;
 
     public Location () { }

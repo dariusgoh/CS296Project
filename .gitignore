@@ -6,3 +6,4 @@
 .DS_Store
 /build
 /captures
+/backend/build/libs/backend-android-endpoints.jar

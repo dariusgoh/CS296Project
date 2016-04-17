@@ -44,4 +44,23 @@
         android:layout_below="@id/button_display_interests"
         android:layout_toRightOf="@id/emptyView"
         android:layout_alignParentRight="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="No Users"
+        android:id="@+id/nearby_user_names"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Refresh"
+        android:id="@+id/refresh_button"
+        android:onClick="onClickRefresh"
+        android:layout_above="@id/nearby_user_names"
+        android:layout_centerHorizontal="true" />
+
 </RelativeLayout>

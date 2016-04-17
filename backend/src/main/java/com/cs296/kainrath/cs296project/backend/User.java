@@ -1,5 +1,6 @@
 package com.cs296.kainrath.cs296project.backend;
 
+import com.google.api.server.spi.config.Api;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
@@ -20,6 +21,10 @@ public class User {
     String user_email;
     
     Set<String> interests;
+
+
+    // To send gcm messages to client app
+    String token;
 
     public User() {
         this(null, null);
@@ -54,4 +59,15 @@ public class User {
     }
 
     public void addInterests(String interest) { this.interests.add(interest); }
+
+    public void setInterests(Set<String> interests) { this.interests = interests; }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getToken() {
+        return this.token;
+    }
+
 }

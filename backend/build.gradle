@@ -26,11 +26,13 @@ dependencies {
     compile 'com.google.maps.android:android-maps-utils:0.4'
     compile 'com.googlecode.objectify:objectify:5.1.12'
     compile 'com.google.guava:guava:19.0'
+    compile 'com.ganyo:gcm-server:1.0.2'
     compile 'javax.servlet:servlet-api:2.5'
     compile 'com.google.appengine:appengine-endpoints:1.9.32'
     appengineSdk 'com.google.appengine:appengine-java-sdk:1.9.32'
     compile files('src/main/webapp/WEB-INF/ormlite-core-4.48.jar')
     compile files('src/main/webapp/WEB-INF/ormlite-jdbc-4.48.jar')
+    compile files('src/main/webapp/WEB-INF/mysql-connector-java-5.1.38-bin.jar')
 }
 
 appengine {
