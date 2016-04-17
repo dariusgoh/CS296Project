@@ -13,40 +13,40 @@ import java.util.Set;
  * Created by kainrath on 3/24/16.
  */
 public class GlobalVars extends Application {
-    private List<User> nearby_users = null;
-    private User user = null;
-    private boolean failed = false;
+    private static List<User> nearby_users = null;
+    private static User user = null;
+    private static boolean failed = false;
 
-    private double latit = 0;
-    private double longit = 0;
+    private static double latit = 0;
+    private static double longit = 0;
     // private boolean has_user = false;
 
     private static final String email = "user_email";
     private static final String id = "user_id";
     private static final String interests = "interests";
 
-    public void setLatLong(double latitude, double longitude) {
+    public static void setLatLong(double latitude, double longitude) {
         latit = latitude;
         longit = longitude;
     }
 
-    public double getLat() {
+    public static double getLat() {
         return latit;
     }
 
-    public double getLong() {
+    public static double getLong() {
         return longit;
     }
 
-    public void setUser(User user) { this.user = user; }
+    public static void setUser(User ouser) { user = ouser; }
 
-    public User getUser() { return this.user; }
+    public static User getUser() { return user; }
 
-    public boolean getFailed() { return failed; }
+    public static boolean getFailed() { return failed; }
 
-    public void setFailed(boolean result) { this.failed = result; }
+    public static void setFailed(boolean result) { failed = result; }
 
-    public String getNearbyUserString() {
+    public static String getNearbyUserString() {
         if (nearby_users == null || nearby_users.isEmpty()) {
             return "No Users Nearby";
         }
@@ -57,18 +57,18 @@ public class GlobalVars extends Application {
         return result;
     }
 
-    public List<User> getNearbyUsers() {
+    public static List<User> getNearbyUsers() {
         if (nearby_users == null) {
             nearby_users = new ArrayList<>();
         }
         return nearby_users;
     }
 
-    public void setNearbyUsers(List<User> nearby_users) {
-        this.nearby_users = nearby_users;
+    public static void setNearbyUsers(List<User> onearby_users) {
+        nearby_users = onearby_users;
     }
 
-    public void addNearbyUser(String id, String email, List<String> interests) {
+    public static void addNearbyUser(String id, String email, List<String> interests) {
         User nearby_user = new User();
         nearby_user.setId(id);
         nearby_user.setEmail(email);
@@ -76,7 +76,7 @@ public class GlobalVars extends Application {
         addNearbyUser(nearby_user);
     }
 
-    public void addNearbyUser(User nearby_user) {
+    public static void addNearbyUser(User nearby_user) {
         if (nearby_users == null) {
             nearby_users = new ArrayList<User>();
             nearby_users.add(nearby_user);

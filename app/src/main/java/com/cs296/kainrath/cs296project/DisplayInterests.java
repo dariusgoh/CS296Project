@@ -45,10 +45,10 @@ public class DisplayInterests extends AppCompatActivity {
             ((GlobalVars) this.getApplication()).restoreState(savedInstanceState);
         }
 
-        if (((GlobalVars) this.getApplication()).getFailed()) {
+        if (GlobalVars.getFailed()) {
             System.exit(1);
         }
-        user = ((GlobalVars) this.getApplication()).getUser();
+        user = GlobalVars.getUser();
         if (user == null) {
             startActivity(new Intent(this, CreateUser.class));
         }

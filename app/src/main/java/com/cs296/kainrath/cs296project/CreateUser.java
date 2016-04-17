@@ -32,7 +32,7 @@ public class CreateUser extends AppCompatActivity implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (((GlobalVars) this.getApplication()).getUser() != null) {
+        if (GlobalVars.getUser() != null) {
             startActivity(new Intent(this, MainActivity.class));
         }
 

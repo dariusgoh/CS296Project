@@ -12,7 +12,7 @@ public class TokenRefreshListener extends InstanceIDListenerService {
     @Override
     public void onTokenRefresh() {
         Intent intent = new Intent(this, RegistrationIntentService.class);
-        intent.putExtra(CreateUser.USER_ID, ((GlobalVars) this.getApplication()).getUser().getId());
+        intent.putExtra(CreateUser.USER_ID, GlobalVars.getUser().getId());
         startService(intent);
     }
 }

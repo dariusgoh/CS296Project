@@ -56,9 +56,9 @@ public class AsyncGetUser extends AsyncTask<String, Void, User> {
                 user.setEmail(params[1]);
                 userService.insert(user).execute();
             }
-            ((GlobalVars) activity.getApplication()).setUser(user);
+            GlobalVars.setUser(user);
         } catch (IOException e) {
-            ((GlobalVars) activity.getApplication()).setFailed(true);
+            GlobalVars.setFailed(true);
         }
         return user;
     }
