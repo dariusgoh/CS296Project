@@ -38,7 +38,7 @@ public class LocationEndpoint {
     private static final int MYSQL_DUPLICATE_CODE = 1062;
     private static final Logger logger = Logger.getLogger(LocationEndpoint.class.getName());
     private static final String url = "jdbc:google:mysql://cs296-backend:cs296-app-location-data/UserLocation?user=root";
-    private static final double DIST = 50;
+    private static final double DIST = 200;
     private static final double RAD_EARTH = 6371000;
     private static final double ANG_DIST = DIST / RAD_EARTH;
     private static String API_KEY = System.getProperty("gcm.api.key");
