@@ -80,7 +80,6 @@ public class LocationEndpoint {
     /**
      * This inserts a new <code>Location</code> object.
      *
-     *  location The object to be added.
      * @param user_id   The user to be updated.
      * @param latitude  The latitude of the user.
      * @param longitude The longitude of the user.
@@ -98,7 +97,7 @@ public class LocationEndpoint {
 
             Statement stmt_insert = conn.createStatement();
             String insert = "INSERT INTO Location (user_id, latitude, longitude) VALUES " +
-                            "(\"" + user_id + "\", " + latitude + ", " + longitude + ")";
+                    "(\"" + user_id + "\", " + latitude + ", " + longitude + ")";
             stmt_insert.executeUpdate(insert);
 
         } catch (ClassNotFoundException e) {
@@ -108,7 +107,7 @@ public class LocationEndpoint {
             if (e.getErrorCode() == MYSQL_DUPLICATE_CODE && conn != null) { // Already in database, just update
                 try {
                     String update = "UPDATE Location SET latitude=" + latitude + ", longitude=" + longitude +
-                                            " WHERE user_id=\"" + user_id + "\"";
+                            " WHERE user_id=\"" + user_id + "\"";
                     Statement stmt_update = conn.createStatement();
                     stmt_update.executeUpdate(update);
                 } catch (SQLException ex) {
@@ -120,11 +119,6 @@ public class LocationEndpoint {
                 return null;
             }
         }
-        // Search for nearby users
-        // findUsersInRadius(dao);
-        try {
-            connectionSource.close();
-        } catch (SQLException e) {
 
         // Find nearby users
         List<String> nearby_user_ids = findUsersInRadius(conn, location);
@@ -211,14 +205,14 @@ public class LocationEndpoint {
         double cos_lat1 = Math.cos(latitude * Math.PI / 180); // Need radians    1 = Cos(0)
         double dLat = Math.abs(Math.asin(sin_lat1 * ang_cos + cos_lat1 * ang_sin * 1) * 180 / Math.PI - latitude);
         double dLong = Math.abs(Math.atan2(1 * ang_sin * cos_lat1, ang_cos - sin_lat1 * sin_lat1) * 180 / Math.PI); // Lat2 = Lat 1;
-                                        // 1 = sin(90)
+        // 1 = sin(90)
         double lat1 = latitude + dLat;
         double lat2 = latitude - dLat;
         double long1 = longitude + dLong;
         double long2 = longitude - dLong;
 
         String query = "SELECT * FROM Location WHERE latitude BETWEEN " + lat2 + " AND " + lat1 +
-                        " AND longitude BETWEEN " + long2 + " AND " + long1;
+                " AND longitude BETWEEN " + long2 + " AND " + long1;
         List<Location> nearby_users_loc = new ArrayList<Location>();
         try {
             Statement stmt = conn.createStatement();
