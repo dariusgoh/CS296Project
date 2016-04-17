@@ -49,7 +49,7 @@ public class AsyncGetUser extends AsyncTask<String, Void, User> {
         }
         User user = null;
         try {
-            user = userService.get(params[0]).execute();
+            //user = userService.get(params[0]).execute();
             if (user == null) {
                 user = new User();
                 user.setId(params[0]);

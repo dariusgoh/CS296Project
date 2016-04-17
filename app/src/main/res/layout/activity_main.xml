@@ -48,67 +48,19 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/debug_status1"
-        android:text="GPS CONNECTION"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="No Users"
+        android:id="@+id/nearby_user_names"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
 
-    <TextView
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="LOCATION"
-        android:id="@+id/debug_status2"
-        android:layout_above="@id/debug_status1"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="USER"
-        android:id="@+id/debug_message"
-        android:layout_above="@+id/count_label"
-        android:layout_alignParentLeft="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Unknown"
-        android:id="@+id/user_id_text"
-        android:layout_alignParentRight="true"
-        android:layout_above="@+id/update_count_text"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Inactive"
-        android:id="@+id/location_text"
-        android:layout_above="@+id/availability_text"
-        android:layout_alignParentRight="true"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Inactive"
-        android:id="@id/availability_text"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Invalid"
-        android:layout_above="@id/location_text"
-        android:layout_alignParentRight="true"
-        android:id="@id/update_count_text"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/debug_status2"
-        android:layout_alignParentLeft="true"
-        android:text="UPDATE COUNT"
-        android:id="@id/count_label"/>
+        android:text="Refresh"
+        android:id="@+id/refresh_button"
+        android:onClick="onClickRefresh"
+        android:layout_above="@id/nearby_user_names"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

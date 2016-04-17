@@ -1,9 +1,13 @@
 package com.cs296.kainrath.cs296project.backend;
 
+import com.google.android.gcm.server.Message;
+import com.google.android.gcm.server.Result;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 
+import com.google.android.gcm.server.Sender;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -37,6 +41,8 @@ public class LocationEndpoint {
     private static final double DIST = 50;
     private static final double RAD_EARTH = 6371000;
     private static final double ANG_DIST = DIST / RAD_EARTH;
+    private static String API_KEY = System.getProperty("gcm.api.key");
+    private static final String GCM_URL = "https://gcm-http.googleapis.com/gcm/send";
 
     /**
      * This method gets the <code>Location</code> object associated with the specified <code>id</code>.
@@ -120,11 +126,24 @@ public class LocationEndpoint {
         if (!nearby_user_ids.isEmpty()) {
             // Get users within radius
             nearby_users = UserEndpoint.getAll(nearby_user_ids);
-            User curr_user = UserEndpoint.getOne(user_id);
+            final User curr_user = UserEndpoint.getOne(user_id);
 
             // Check for interest match, remove users who dont match
             nearby_users.setUsers(findMatchingUsers(curr_user, nearby_users.getUsers()));
+            final List<User> other_users = nearby_users.getUsers();
+            // Notify the nearby users (if any)
+
+            if (!nearby_users.getUsers().isEmpty()) {
+                Thread notifyOthers = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        notifyNearbyUsers(other_users, curr_user);
+                    }
+                });
+                notifyOthers.start();
+            }
         }
+
 
         // Close connection
         try {
@@ -163,6 +182,9 @@ public class LocationEndpoint {
         Set<String> curr_interests = curr_user.getInterests();
         Set<String> other_interests;
         for (int i = nearby_users.size() - 1; i >= 0; --i) {
+            if (nearby_users.get(i).getId().equals(curr_user.getId())) {
+                continue;
+            }
             other_interests = nearby_users.get(i).getInterests();
             other_interests.retainAll(curr_interests);
             if (other_interests.size() == 0) {  // No matching interests
@@ -216,6 +238,29 @@ public class LocationEndpoint {
             }
         }
         return nearby_user_ids;
+    }
+
+    private void notifyNearbyUsers(List<User> nearby_users, User curr_user) {
+        String token;
+        for (User user : nearby_users) {
+            token = user.getToken();
+            if (token == null) { // Make sure they have a token
+                continue;
+            }
+
+            String matching_interests = "";
+            for (String match : user.getInterests()) {
+                matching_interests += "\n" + match;
+            }
+            Sender sender = new Sender(API_KEY);
+            Message message = new Message.Builder().addData("userId", curr_user.getId()).addData("userEmail", curr_user.getEmail())
+                    .addData("interests", matching_interests).build();
+            try {
+                Result result = sender.send(message, token, 5); // Retry sending 5 times
+            } catch (IOException e) {
+
+            }
+        }
     }
 }
 

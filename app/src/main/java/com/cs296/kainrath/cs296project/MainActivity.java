@@ -1,6 +1,7 @@
 package com.cs296.kainrath.cs296project;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -19,64 +20,21 @@ import android.widget.Toast;
 
 import com.cs296.kainrath.cs296project.backend.userApi.model.User;
 
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
+
+    private static final String USER_ID = "USER_ID";
 
     private User user;
     private Button activate;
     private Button deactivate;
 
     // For debug purposes
-    private TextView location_text;
-    private TextView avail_text;
-    private TextView user_text;
-    private TextView count_text;
+
+    private TextView nearby_user_names;
 
     int count;
-
-    private LocationManager locationManager;
-
-    private MyLocationListener mylistener;
-
-    private class MyLocationListener implements LocationListener {
-
-        @Override
-        public void onLocationChanged(Location location) {
-            // send information to the database
-
-            count_text.setText("" + count);
-            location_text.setText(location.getLatitude() + ", " + location.getLongitude());
-            avail_text.setText("Available");
-            ++count;
-            new AsyncUpdateLocation(user.getId(), MainActivity.this).execute(location.getLatitude(), location.getLongitude());
-
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            if (status == LocationProvider.OUT_OF_SERVICE) {
-                avail_text.setText("Out of service");
-            } else if (status == LocationProvider.TEMPORARILY_UNAVAILABLE) {
-                avail_text.setText("Temporarily Unavailable");
-            } else { // status == LocationProvider.AVAILABLE
-                avail_text.setText("Available");
-            }
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            Toast.makeText(getBaseContext(), "GPS is on! ",
-                    Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
-            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivity(intent);
-            Toast.makeText(getBaseContext(), "turn GPS on! ",
-                    Toast.LENGTH_SHORT).show();
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,17 +55,14 @@ public class MainActivity extends AppCompatActivity {
 
         activate = (Button) findViewById(R.id.button_activate);
         deactivate = (Button) findViewById(R.id.button_deactivate);
-        deactivate.setEnabled(false);
+        nearby_user_names = (TextView) findViewById(R.id.nearby_user_names);
 
-        location_text = (TextView) findViewById(R.id.location_text);
-        avail_text = (TextView) findViewById(R.id.availability_text);
-        user_text = (TextView) findViewById(R.id.user_id_text);
-        count_text = (TextView) findViewById(R.id.update_count_text);
-        //location_text.setText("Deactivated");
-        //avail_text.setText("Deactivated");
-        user_text.setText(user.getEmail());
-        mylistener = new MyLocationListener();
-        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        nearby_user_names.setText(((GlobalVars) this.getApplication()).getNearbyUserString());
+        if (LocationTrackerService.isInstanceCreated()) {
+            activate.setEnabled(false);
+        } else {
+            deactivate.setEnabled(false);
+        }
     }
 
     @Override
@@ -121,45 +76,60 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickActivate(View view) {
-
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (PackageManager.PERMISSION_GRANTED == permissionCheck) {
-            count = 1;
             activate.setEnabled(false);
             deactivate.setEnabled(true);
-            count_text.setText("0");
-            location_text.setText("Searching");
-            avail_text.setText("Searching");
-            //
-            //                                                                   // 600000
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1609, mylistener);
+            Intent intent = new Intent(this, LocationTrackerService.class);
+            intent.putExtra(USER_ID, user.getId());
+            startService(intent);
         } else {
-            deactivate.setText("0");
-            location_text.setText("Failed to activate");
-            avail_text.setText("Failed to activate");
+            Toast.makeText(this, "Please enable location services for this app", Toast.LENGTH_LONG).show();
         }
     }
 
     public void onClickDeactivate(View view) {
-        deactivate.setEnabled(false);
+
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (PackageManager.PERMISSION_GRANTED == permissionCheck) {
-            locationManager.removeUpdates(mylistener);
-
-            new AsyncDeactivateUser().execute(user.getId());
-
-            count_text.setText("Deactivated");
-            location_text.setText("Deactivated");
-            avail_text.setText("Deactivated");
+            stopService(new Intent(this, LocationTrackerService.class));
+            deactivate.setEnabled(false);
+            activate.setEnabled(true);
         }
         else {
-            Toast.makeText(getBaseContext(), "please allow location permissions ",
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please enable location services for this app", Toast.LENGTH_LONG).show();
         }
-
-        activate.setEnabled(true);
-
     }
+
+    public void onClickRefresh(View view) {
+        nearby_user_names.setText(((GlobalVars) this.getApplication()).getNearbyUserString());
+    }
+    /*
+    public void onClickRefresh(View view) {
+
+        List<User> nearby_users = ((GlobalVars) this.getApplication()).getNearbyUsers();
+        if (nearby_users == null | nearby_users.isEmpty()) {
+            nearby_user_text.setText("No nearby users");
+        } else {
+            String user_list = "";
+            for (User user : nearby_users) {
+                if (user != null) {
+                    user_list += user.getId() + " ";
+                }
+            }
+            nearby_user_text.setText(user_list);
+        }
+    }*/
+
+    /*
+    // For getting the gcm token
+    public class ResponseReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+        }
+    }
+    */
 }
 
 

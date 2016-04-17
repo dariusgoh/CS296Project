@@ -3,11 +3,20 @@
     package="com.cs296.kainrath.cs296project">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_GPS" />
 
+    <!-- Declare and enforce permission -->
+    <permission
+        android:name="com.cs296.kainrath.cs296project.permission.C2D_MESSAGE"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="com.cs296.kainrath.cs296project.permission.C2D_MESSAGE" />
+
     <application
+        android:debuggable="true"
         android:name=".GlobalVars"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -31,6 +40,38 @@
             android:name=".DisplayInterests"
             android:screenOrientation="portrait" />
 
+        <receiver
+            android:name="com.google.android.gms.gcm.GcmReceiver"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+
+                <category android:name="com.example.gcm" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".UserListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".TokenRefreshListener"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.android.gms.iid.InstanceID" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".RegistrationIntentService"
+            android:exported="false" />
+        <service
+            android:name=".LocationTrackerService"
+            android:enabled="true"
+            android:exported="false"></service>
     </application>
 
 </manifest>

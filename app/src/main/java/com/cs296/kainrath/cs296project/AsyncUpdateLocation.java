@@ -1,5 +1,6 @@
 package com.cs296.kainrath.cs296project;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.widget.Toast;
@@ -22,10 +23,12 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
     private LocationApi locationService = null;
     private String userID = null;
     private Context context = null;
+    //private Activity activity = null;
 
-    public AsyncUpdateLocation(String userID, Context context) {
+    public AsyncUpdateLocation(String userID, Context context/*, Activity activity*/) {
         this.userID = userID;
         this.context = context;
+        //this.activity = activity;
     }
 
     @Override  // Runs in a separate thread
@@ -70,7 +73,9 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
         if (nearby_users == null || nearby_users.size() == 0) {
             Toast.makeText(context, "No nearby users with matching interests", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(context, nearby_users.size() + " matching user(s)!", Toast.LENGTH_SHORT).show();
+            for (User user : nearby_users) {
+                //((GlobalVars) activity.getApplication()).addNearbyUser(user.getId(), user.getEmail(), user.getInterests());
+            }
         }
     }
 }

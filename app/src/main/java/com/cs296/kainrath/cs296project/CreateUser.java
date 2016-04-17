@@ -1,6 +1,7 @@
 package com.cs296.kainrath.cs296project;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,13 +16,18 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 public class CreateUser extends AppCompatActivity implements
+        UserInfoReceiver.Receiver,
         GoogleApiClient.OnConnectionFailedListener,
         View.OnClickListener {
 
     GoogleApiClient apiClient;
 
+    public static final String EMAIL = "EMAIL";
+    public static final String USER_ID = "USER_ID";
     private static final int GOOGLE_SIGN_IN = 9001;
     private static final String TAG = "SignInActivity";
+
+    public UserInfoReceiver userInfoReceiver = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -66,13 +72,22 @@ public class CreateUser extends AppCompatActivity implements
         }
     }
 
+
     private void handleSignInResult(GoogleSignInResult result) {
         Log.d(TAG, "handleSignInResult:" + result.isSuccess()); // For debug version only
         if (result.isSuccess()) {
             // Signed in successfully
             GoogleSignInAccount acct = result.getSignInAccount();
             Toast.makeText(this, "Welcome " + acct.getEmail(), Toast.LENGTH_LONG).show();
-            new AsyncGetUser(this).execute(acct.getId(), acct.getEmail());
+            Intent intent = new Intent(this, RegistrationIntentService.class);
+            intent.setAction(RegistrationIntentService.ACTION_GET_TOKEN);
+            intent.putExtra(USER_ID, acct.getId());
+            intent.putExtra(EMAIL, acct.getEmail());
+            userInfoReceiver = new UserInfoReceiver(new Handler());
+            userInfoReceiver.setReceiver(this);
+            intent.putExtra(RegistrationIntentService.REQUEST_RESULT, userInfoReceiver);
+            startService(intent); // Get registration token
+            // new AsyncGetUser(this).execute(acct.getId(), acct.getEmail());
             setContentView(R.layout.activity_loading_user);
             //startActivity(new Intent(this, MainActivity.class));
         } else {
@@ -85,5 +100,15 @@ public class CreateUser extends AppCompatActivity implements
         // An unresolvable error has occurred and Google APIs (including Sign-In) will not
         // be available.
         Log.d(TAG, "onConnectionFailed:" + connectionResult);
+    }
+
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (resultCode == 1) {
+            startActivity(new Intent(this, MainActivity.class));
+        } else {
+            Log.d(TAG, "Creating token and receiving user data failed");
+            System.exit(1);
+        }
     }
 }
