@@ -4,6 +4,7 @@ import android.app.Application;
 import android.os.Bundle;
 
 import com.cs296.kainrath.cs296project.backend.userApi.model.User;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.ArrayList;
 import java.util.List;

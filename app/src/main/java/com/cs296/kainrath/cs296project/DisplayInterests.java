@@ -62,7 +62,9 @@ public class DisplayInterests extends AppCompatActivity {
         super.onSaveInstanceState(savedInstanceState);
         user.setInterests(interests);
         ((GlobalVars) this.getApplication()).saveState(savedInstanceState);
-        new AsyncUpdateUser().execute(user);
+        if (modified) {
+            new AsyncUpdateUser().execute(user);
+        }
     }
 
     private void displayInterests() {

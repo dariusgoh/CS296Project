@@ -7,9 +7,9 @@ package com.cs296.kainrath.cs296project.backend;
  */
 
 public class Location {
-    public static final String LAT_FIELD = "latitude";
-    public static final String LONG_FIELD = "longitude";
-    public static final String ID_FIELD = "user_id";
+    public static final String LAT_FIELD = "Latitude";
+    public static final String LONG_FIELD = "Longitude";
+    public static final String ID_FIELD = "UserId";
 
     private String user_id;
 

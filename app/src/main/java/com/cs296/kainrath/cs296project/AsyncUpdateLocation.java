@@ -3,6 +3,7 @@ package com.cs296.kainrath.cs296project;
 import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.cs296.kainrath.cs296project.backend.locationApi.LocationApi;
@@ -23,6 +24,7 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
     private LocationApi locationService = null;
     private String userID = null;
     private Context context = null;
+    private static final String TAG = "AsyncLocUpdate";
 
     public AsyncUpdateLocation(String userID, Context context) {
         this.userID = userID;
@@ -56,12 +58,15 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
         try {
             // locationService.updateLocation(userID, params[0], params[1]).execute();
             nearby_users = locationService.updateLocation(userID, params[0], params[1]).execute();
+            Log.d(TAG, "Update location");
         } catch (IOException e) {
-
+            Log.d(TAG, "IOException when trying to update location");
         }
         if (nearby_users != null) {
+            Log.d(TAG, "update location returned #" + nearby_users.size());
             return nearby_users.getUsers();
         } else {
+            Log.d(TAG, "update location return null");
             return null;
         }
     }
@@ -70,8 +75,10 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
     protected void onPostExecute(List<User> nearby_users) {
         if (nearby_users == null || nearby_users.size() == 0) {
             Toast.makeText(context, "No nearby users with matching interests", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "No nearby users");
         } else {
             for (User user : nearby_users) {
+                Log.d(TAG, "Adding nearby user");
                 GlobalVars.addNearbyUser(user.getId(), user.getEmail(), user.getInterests());
             }
         }

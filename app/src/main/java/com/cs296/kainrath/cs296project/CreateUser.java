@@ -14,14 +14,15 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 
 public class CreateUser extends AppCompatActivity implements
         UserInfoReceiver.Receiver,
         GoogleApiClient.OnConnectionFailedListener,
         View.OnClickListener {
 
-    GoogleApiClient apiClient;
-
+    private GoogleApiClient googleClient;
     public static final String EMAIL = "EMAIL";
     public static final String USER_ID = "USER_ID";
     private static final int GOOGLE_SIGN_IN = 9001;
@@ -40,7 +41,7 @@ public class CreateUser extends AppCompatActivity implements
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail().build();
-        apiClient = new GoogleApiClient.Builder(this)
+        googleClient = new GoogleApiClient.Builder(this)
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
@@ -58,7 +59,7 @@ public class CreateUser extends AppCompatActivity implements
     }
 
     private void signIn() {
-        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(apiClient);
+        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(googleClient);
         startActivityForResult(signInIntent, GOOGLE_SIGN_IN);
     }
 
@@ -104,6 +105,15 @@ public class CreateUser extends AppCompatActivity implements
 
     @Override
     public void onReceiveResult(int resultCode, Bundle resultData) {
+        if (googleClient.isConnected()) {
+            Auth.GoogleSignInApi.signOut(googleClient).setResultCallback(
+                    new ResultCallback<Status>() {
+                        @Override
+                        public void onResult(Status status) {
+                            // Signed out
+                        }
+                    });
+        }
         if (resultCode == 1) {
             startActivity(new Intent(this, MainActivity.class));
         } else {

@@ -117,6 +117,7 @@ public class LocationTrackerService extends Service {
         locListener = new UserLocationListener(this.getApplicationContext());
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         try {
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 6000, 20, locListener);
             Log.d(TAG, "Requested location updates");
         } catch (SecurityException e) {

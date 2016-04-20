@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -41,7 +42,8 @@ public class LocationEndpoint {
     private static final double DIST = 200;
     private static final double RAD_EARTH = 6371000;
     private static final double ANG_DIST = DIST / RAD_EARTH;
-    private static String API_KEY = System.getProperty("gcm.api.key");
+    //private static final String API_KEY = System.getProperty("gcm.api.key");
+    private static final String API_KEY = "AIzaSyAJuwfy0EoirghnDaThupzrqNTDVxsm650";
     private static final String GCM_URL = "https://gcm-http.googleapis.com/gcm/send";
 
     /**
@@ -59,7 +61,7 @@ public class LocationEndpoint {
             Class.forName("com.mysql.jdbc.GoogleDriver");
             Connection conn = DriverManager.getConnection(url);
 
-            String find_query = "SELECT * FROM Location WHERE user_id=\"" + user_id + "\"";
+            String find_query = "SELECT * FROM UserInfo WHERE UserId=\"" + user_id + "\"";
             Statement stmt = conn.createStatement();
             ResultSet result = stmt.executeQuery(find_query);
             if (result.next()) {
@@ -86,7 +88,7 @@ public class LocationEndpoint {
      * @return The object to be added.
      */
     @ApiMethod(name = "updateLocation")
-    public UserList updateLocation(@Named("user_id") String user_id, @Named("latitude") double latitude, @Named("longitude") double longitude) {
+    public ChatGroupList updateLocation(@Named("user_id") String user_id, @Named("latitude") double latitude, @Named("longitude") double longitude) {
         Location location = new Location(user_id, latitude, longitude);
         logger.info("Calling insertLocation method");
 
@@ -96,14 +98,21 @@ public class LocationEndpoint {
             conn = DriverManager.getConnection(url);
 
             Statement stmt_insert = conn.createStatement();
-            String insert = "INSERT INTO Location (user_id, latitude, longitude) VALUES " +
-                            "(\"" + user_id + "\", " + latitude + ", " + longitude + ")";
-            stmt_insert.executeUpdate(insert);
+
+            //String insert = "INSERT INTO UserInfo (user_id, latitude, longitude) VALUES " +
+            //        "(\"" + user_id + "\", " + latitude + ", " + longitude + ")";
+
+            String updateLoc = "UPDATE UserInfo SET Latitude=" + latitude + ", Longitude=" + longitude +
+                    ", Online=\"Y\" WHERE UserId=\"" + user_id + "\"";
+            stmt_insert.executeUpdate(updateLoc);
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             return null;
         } catch (SQLException e) {
+            String error = e.getSQLState();
+            return null;
+            /*
             if (e.getErrorCode() == MYSQL_DUPLICATE_CODE && conn != null) { // Already in database, just update
                 try {
                     String update = "UPDATE Location SET latitude=" + latitude + ", longitude=" + longitude +
@@ -117,22 +126,49 @@ public class LocationEndpoint {
             } else {
                 e.printStackTrace();
                 return null;
-            }
+            }*/
         }
 
+        // GET CURRENT CHATGROUPS
+        List<Integer> currChatIds = getCurrentChatGroups(conn, user_id);
+
+        if (!currChatIds.isEmpty()) {
+            // UPDATE CURR CHATGROUP LOCATIONS
+        }
+
+        // FIND NEARBY CHATGROUPS
+        List<ChatGroup> nearbyChats = findChatGroupsInRadius(conn, location);
+
+        // GET CURRENT USER INTERESTS
+        List<String> userInterests = getCurrentInterests(conn, user_id);
+
+
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            String error = e.getSQLState();
+        }
+        return /*something*/;
+
+        /*
         // Find nearby users
         List<String> nearby_user_ids = findUsersInRadius(conn, location);
         UserList nearby_users = null;
-        if (!nearby_user_ids.isEmpty()) {
+        boolean isEmpty = nearby_user_ids.isEmpty();
+        if (!isEmpty) {
             // Get users within radius
             nearby_users = UserEndpoint.getAll(nearby_user_ids);
-            final User curr_user = UserEndpoint.getOne(user_id);
+            User curr_user = UserEndpoint.getOne(user_id);
 
             // Check for interest match, remove users who dont match
             nearby_users.setUsers(findMatchingUsers(curr_user, nearby_users.getUsers()));
-            final List<User> other_users = nearby_users.getUsers();
-            // Notify the nearby users (if any)
 
+            // Notify the nearby users (if any)
+            notifyNearbyUsers(nearby_users.getUsers(), curr_user);
+
+            /*
+            final User curr_user = UserEndpoint.getOne(user_id);
+            final List<User> other_users = nearby_users.getUsers();
             if (!nearby_users.getUsers().isEmpty()) {
                 Thread notifyOthers = new Thread(new Runnable() {
                     @Override
@@ -152,6 +188,7 @@ public class LocationEndpoint {
             e.printStackTrace();
         }
         return nearby_users;
+        */
     }
 
     @ApiMethod(name = "deactivateUser")
@@ -196,6 +233,43 @@ public class LocationEndpoint {
         return nearby_users;
     }
 
+    private List<ChatGroup> findChatGroupsInRadius(Connection conn, Location userLoc) {
+        double latitude = userLoc.getLatitude();
+        double longitude = userLoc.getLongitude();
+        double ang_cos = Math.cos(ANG_DIST);
+        double ang_sin = Math.sin(ANG_DIST);
+        double sin_lat1 = Math.sin(latitude * Math.PI / 180); // Need radians
+        double cos_lat1 = Math.cos(latitude * Math.PI / 180); // Need radians    1 = Cos(0)
+        double dLat = Math.abs(Math.asin(sin_lat1 * ang_cos + cos_lat1 * ang_sin * 1) * 180 / Math.PI - latitude);
+        double dLong = Math.abs(Math.atan2(1 * ang_sin * cos_lat1, ang_cos - sin_lat1 * sin_lat1) * 180 / Math.PI); // Lat2 = Lat 1;
+        // 1 = sin(90)
+        double lat1 = latitude + dLat;
+        double lat2 = latitude - dLat;
+        double long1 = longitude + dLong;
+        double long2 = longitude - dLong;
+
+
+        List<ChatGroup> nearbyChatGroups = new ArrayList<ChatGroup>();
+        ChatGroup nearbyGroup; // Placed here for debug purposes
+        try {
+            // GET CHATGROUPS NEAR USER
+            String groupQuery = "SELECT * FROM ChatGroups WHERE Latitude BETWEEN " + lat2 + " AND " + lat1 +
+                    " AND Longitude BETWEEN " + long2 + " AND " + long1;
+            ResultSet rs = conn.createStatement().executeQuery(groupQuery);
+
+            while (rs.next()) {
+                nearbyGroup = new ChatGroup(rs.getString("Interest"), rs.getInt("ChatId"), rs.getInt("GroupSize"),
+                        rs.getDouble("Latitude"), rs.getDouble("Longitude"));
+                nearbyChatGroups.add(nearbyGroup);
+            }
+
+        } catch (SQLException e) {
+            String error = e.getSQLState();
+            return null;
+        }
+        return nearbyChatGroups;
+    }
+
     private List<String> findUsersInRadius(Connection conn, Location user_loc) {
         double latitude = user_loc.getLatitude();
         double longitude = user_loc.getLongitude();
@@ -214,17 +288,24 @@ public class LocationEndpoint {
         String query = "SELECT * FROM Location WHERE latitude BETWEEN " + lat2 + " AND " + lat1 +
                         " AND longitude BETWEEN " + long2 + " AND " + long1;
         List<Location> nearby_users_loc = new ArrayList<Location>();
+        Location loc;
         try {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query);
 
-            while (rs.next() && !rs.getString(Location.ID_FIELD).equals(user_loc.getUser_id())) {
-                Location loc = new Location();
-                loc.setUser_id(rs.getString(Location.ID_FIELD));
+            while (rs.next()) {
+                String user_id = rs.getString(Location.ID_FIELD);
+                if (user_id.equals(user_loc.getUser_id())) {
+                    continue;
+                }
+
+                loc = new Location();
+                loc.setUser_id(user_id);
                 loc.setLatitude(rs.getDouble(Location.LAT_FIELD));
                 loc.setLongitude(rs.getDouble(Location.LONG_FIELD));
                 nearby_users_loc.add(loc);
             }
+            rs.close();
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -233,7 +314,8 @@ public class LocationEndpoint {
         List<String> nearby_user_ids = new ArrayList<String>();
         // Add users who are in radius
         for (int i = nearby_users_loc.size() - 1; i >= 0; --i) {
-            if (user_loc.distanceTo(nearby_users_loc.get(i)) <= DIST) {
+            double dist = user_loc.distanceTo(nearby_users_loc.get(i));
+            if (dist <= DIST) {
                 nearby_user_ids.add(nearby_users_loc.get(i).getUser_id());
             }
         }
@@ -262,7 +344,35 @@ public class LocationEndpoint {
             }
         }
     }
+
+    private List<Integer> getCurrentChatGroups(Connection conn, String user_id) {
+        List<Integer> currChatGroups = null;
+        try {
+            String query = "SELECT ChatId FROM ChatUsers WHERE UserId=\"" + user_id + "\"";
+            ResultSet rs = conn.createStatement().executeQuery(query);
+
+            currChatGroups = new ArrayList<>();
+            while (rs.next()) {
+                currChatGroups.add(rs.getInt("ChatId"));
+            }
+
+        } catch (SQLException e) {
+            String error = e.getSQLState();
+            return null;
+        }
+        return currChatGroups;
+    }
+
+    private List<String> getCurrentInterests(Connection conn, String user_id) {
+        
+    }
 }
 
-
+/* Finding ChatGroups nearby
+* Look for ChatGroups Between Lat1 and Lat2 and Long1 and Long2 (Square)
+* Narrow down to circle
+* If there is a match, add user to ChatGroup and notify members of ChatGroup
+* Create a "ChatGroup" for each interest that doesn't have a ChatGroup
+* Return a Set of ChatGroups
+*/
 
