@@ -23,12 +23,10 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
     private LocationApi locationService = null;
     private String userID = null;
     private Context context = null;
-    //private Activity activity = null;
 
-    public AsyncUpdateLocation(String userID, Context context/*, Activity activity*/) {
+    public AsyncUpdateLocation(String userID, Context context) {
         this.userID = userID;
         this.context = context;
-        //this.activity = activity;
     }
 
     @Override  // Runs in a separate thread
@@ -74,7 +72,7 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
             Toast.makeText(context, "No nearby users with matching interests", Toast.LENGTH_SHORT).show();
         } else {
             for (User user : nearby_users) {
-                //((GlobalVars) activity.getApplication()).addNearbyUser(user.getId(), user.getEmail(), user.getInterests());
+                GlobalVars.addNearbyUser(user.getId(), user.getEmail(), user.getInterests());
             }
         }
     }

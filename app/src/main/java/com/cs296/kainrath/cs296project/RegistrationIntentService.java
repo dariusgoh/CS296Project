@@ -59,7 +59,7 @@ public class RegistrationIntentService extends IntentService {
                     Log.d(TAG, "Failed to generate GCM token");
                     System.exit(1);
                 } else {
-                    ((GlobalVars) this.getApplication()).setUser(user);
+                    GlobalVars.setUser(user);
                     if (intent.getAction() == ACTION_GET_TOKEN) {
                         ResultReceiver userResult = intent.getParcelableExtra(REQUEST_RESULT);
                         userResult.send(1, null);

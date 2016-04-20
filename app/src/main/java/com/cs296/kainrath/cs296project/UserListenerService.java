@@ -32,6 +32,6 @@ public class UserListenerService extends GcmListenerService {
         new_user.setInterests(interest_list);
 
         // Store new user data
-        ((GlobalVars) this.getApplication()).addNearbyUser(new_user);
+        GlobalVars.addNearbyUser(new_user);
     }
 }

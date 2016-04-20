@@ -46,10 +46,10 @@ public class MainActivity extends AppCompatActivity {
             ((GlobalVars) this.getApplication()).restoreState(savedInstanceState);
         }
 
-        if (((GlobalVars) this.getApplication()).getFailed()) {
+        if (GlobalVars.getFailed()) {
             System.exit(1);
         }
-        user = ((GlobalVars) this.getApplication()).getUser();
+        user = GlobalVars.getUser();
         if (user == null) {
             startActivity(new Intent(this, CreateUser.class));
         }
@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         user_info = (TextView) findViewById(R.id.user_info_text);
         user_info.setText(user.getEmail());
         lat_long_info = (TextView) findViewById(R.id.lat_long_text);
-        nearby_user_names.setText(((GlobalVars) this.getApplication()).getNearbyUserString());
+        nearby_user_names.setText(GlobalVars.getNearbyUserString());
         if (LocationTrackerService.isInstanceCreated()) {
             activate.setEnabled(false);
         } else {
@@ -106,8 +106,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickRefresh(View view) {
-        nearby_user_names.setText(((GlobalVars) this.getApplication()).getNearbyUserString());
-        lat_long_info.setText("Lat/Long: " + ((GlobalVars) this.getApplication()).getLat() + ":" + ((GlobalVars) this.getApplication()).getLong());
+        nearby_user_names.setText(GlobalVars.getNearbyUserString());
+        String loc = "Lat/Long: " + GlobalVars.getLat() + ":" + GlobalVars.getLong();
+        lat_long_info.setText(loc);
     }
     /*
     public void onClickRefresh(View view) {

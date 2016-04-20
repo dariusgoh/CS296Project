@@ -1,5 +1,6 @@
 package com.cs296.kainrath.cs296project;
 
+import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +19,7 @@ public class LocationTrackerService extends Service {
     private static final String TAG = "LocTrackServ";
     private static final String USER_ID = "USER_ID";
     private String user_id;
+    //private Activity activity;
 
     private LocationManager locationManager;
 
@@ -32,16 +34,18 @@ public class LocationTrackerService extends Service {
     private class UserLocationListener implements LocationListener {
 
         Context appContext = null;
+        //Activity appActivity = null;
 
-        public UserLocationListener(Context appContext) {
+        public UserLocationListener(Context appContext/*, Activity appActivity*/) {
             this.appContext = appContext;
+           // this.appActivity = appActivity;
         }
 
         @Override
         public void onLocationChanged(Location location) {
             // send information to the database
             Log.d(TAG, "Updating location");
-            ((GlobalVars) getApplicationContext()).setLatLong(location.getLatitude(), location.getLongitude());
+            GlobalVars.setLatLong(location.getLatitude(), location.getLongitude());
             new AsyncUpdateLocation(user_id, appContext).execute(location.getLatitude(), location.getLongitude());
         }
 
