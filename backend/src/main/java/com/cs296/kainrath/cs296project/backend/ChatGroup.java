@@ -11,7 +11,6 @@ import java.util.List;
 public class ChatGroup {
     private int chatId;
     private List<String> user_ids;
-    private List<String> user_tokens;
     private double latitude;
     private double longitude;
     private String interest;
@@ -23,6 +22,7 @@ public class ChatGroup {
         this.groupSize = groupSize;
         this.longitude = longitude;
         this.latitude = latitude;
+        user_ids = new ArrayList<>();
     }
 
     /*
@@ -44,6 +44,14 @@ public class ChatGroup {
         this.longitude = longitude;
     }*/
 
+    public boolean equals(ChatGroup other) {
+        return this.chatId == other.chatId;
+    }
+
+    public String getInterest() {
+        return interest;
+    }
+
     public int getChatId() {
         return chatId;
     }
@@ -55,38 +63,38 @@ public class ChatGroup {
     public void moveMember(double oldLat, double oldLong, double newLat, double newLong) {
         this.latitude = (this.latitude * groupSize - oldLat + newLat) / groupSize;
         this.longitude = (this.longitude * groupSize - oldLong + newLong) / groupSize;
-
     }
 
     // USE FOR ADDING A CURRENT MEMBER, WILL NOT INCREASE GROUPSIZE
-    public void putCurrMember(String user_id, String user_token) {
+    public void putCurrMember(String user_id) {
         this.user_ids.add(user_id);
-        this.user_tokens.add(user_token);
     }
 
     // USE FOR ADDING A NEW MEMBER, WILL INCREMENT GROUPSIZE
-    public void addUserToGroup(String user_id, String user_token, double latitude, double longitude) {
+    public void addUserToGroup(String user_id, double latitude, double longitude) {
         this.latitude = (this.latitude * groupSize + latitude) / (groupSize + 1);
         this.longitude = (this.longitude * groupSize + longitude) / (groupSize + 1);
         ++groupSize;
         user_ids.add(user_id);
-        user_tokens.add(user_token);
     }
 
-    public void removeUserFromGroup(String user_id, String user_token, double latitude, double longitude) {
+    public void removeUserFromGroup(String user_id, double oldLat, double oldLong) {
         if (groupSize > 1) {
-            this.latitude = (this.latitude * groupSize - latitude) / (groupSize - 1);
-            this.longitude = (this.longitude * groupSize - longitude) / (groupSize - 1);
+            this.latitude = (this.latitude * groupSize - oldLat) / (groupSize - 1);
+            this.longitude = (this.longitude * groupSize - oldLong) / (groupSize - 1);
             --groupSize;
             user_ids.remove(user_id);
-            user_tokens.remove(user_token);
-        } else {
+        } else { // Empty Group
             this.latitude = 0;
             this.longitude = 0;
             groupSize = 0;
             user_ids.clear();
-            user_tokens.clear();
         }
+    }
+
+    public void setGroupLatLong(double groupLat, double groupLong) {
+        this.latitude = groupLat;
+        this.longitude = groupLong;
     }
 
     public double getLatitude() {
@@ -99,9 +107,5 @@ public class ChatGroup {
 
     public List<String> getUserIds() {
         return user_ids;
-    }
-
-    public List<String> getUserTokens() {
-        return user_tokens;
     }
 }

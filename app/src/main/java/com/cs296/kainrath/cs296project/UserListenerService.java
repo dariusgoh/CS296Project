@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 
 import com.cs296.kainrath.cs296project.backend.userApi.model.User;
 import com.google.android.gms.gcm.GcmListenerService;
@@ -14,24 +15,31 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class UserListenerService extends GcmListenerService {
+    private static String TAG = "GCM Listener Service";
 
     @Override
     public void onMessageReceived(String from, Bundle data) {
-        User new_user = new User();
-        new_user.setId(data.getString("userId"));
-        new_user.setEmail(data.getString("userEmail"));
-
-        String new_user_interests = data.getString("interests");
-
-        // Need to breaks apart interest string
-        List<String> interest_list = new ArrayList<String>();
-        String[] interest_array = new_user_interests.split("\n");
-        for (int i = 0; i < interest_array.length; ++i) {
-            interest_list.add(interest_array[i]);
+        if (!LocationTrackerService.isInstanceCreated()) {
+            Log.d(TAG, "Received GCM while inactive, ignore");
+            return;
         }
-        new_user.setInterests(interest_list);
 
-        // Store new user data
-        GlobalVars.addNearbyUser(new_user);
+        String action = data.getString("Action");
+        if (action.equals("LeavingGroup")) {
+            GlobalVars.removeFromGroup(data.getInt("ChatId"), data.getString("UserId"));
+        } else if (action.equals("JoiningGroup")) {
+            GlobalVars.addToGroup(data.getInt("ChatId"), data.getString("UserId"));
+        } else if (action.equals("NewMessage")) {
+            newMessage(from, data);
+        } else {
+            Log.d(TAG, "Received unknown gcm message");
+        }
+    }
+
+    private void newMessage(String from, Bundle data) {
+        String user = data.getString("UserId");
+        int chatId = data.getInt("ChatId");
+        String message = data.getString("Message");
+        // DO SOMETHING WITH MESSAGE
     }
 }

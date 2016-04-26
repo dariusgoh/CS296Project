@@ -1,9 +1,7 @@
 package com.cs296.kainrath.cs296project;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.cs296.kainrath.cs296project.backend.userApi.UserApi;
 import com.cs296.kainrath.cs296project.backend.userApi.model.User;
@@ -12,28 +10,32 @@ import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.io.IOException;
 
-
 /**
- * Created by kainrath on 3/28/16.
+ * Created by kainrath on 4/25/16.
  */
-public class AsyncGetUser extends AsyncTask<String, Void, User> {
-    private Activity activity = null;
+public class AsyncSendMessage extends AsyncTask<Void, Void, Void> {
+    private String userId;
+    private int chatId;
+    private String message;
+    private static String TAG = "AsyncSendMsg";
 
-    public AsyncGetUser(Activity activity) {
-        this.activity = activity;
+    public AsyncSendMessage(String userId, int chatId, String message) {
+        this.userId = userId;
+        this.message = message;
+        this.chatId = chatId;
     }
 
     @Override
-    protected User doInBackground(String... params) {
+    protected Void doInBackground(Void... params) {
         UserApi userService = GlobalVars.userApi;
         if (userService == null) {
             UserApi.Builder builder = new UserApi.Builder(AndroidHttp.newCompatibleTransport(),
                     new AndroidJsonFactory(), null)
                     .setRootUrl("https://cs296-backend.appspot.com/_ah/api/");
-                    // options for running against local devappserver
-                    // - 10.0.2.2 is localhost's IP address in Android Emulator
-                    // - turn off compression when running against local devappserver
-                    // for local testing
+            // options for running against local devappserver
+            // - 10.0.2.2 is localhost's IP address in Android Emulator
+            // - turn off compression when running against local devappserver
+            // for local testing
                     /*
                     .setRootUrl("http://10.0.2.2:8080/_ah/api/")
                     .setGoogleClientRequestInitializer(new GoogleClientRequestInitializer() {
@@ -48,28 +50,16 @@ public class AsyncGetUser extends AsyncTask<String, Void, User> {
             userService = builder.build();
             GlobalVars.userApi = userService;
         }
-        User user = null;
-        try {
-            //user = userService.get(params[0]).execute();
-            if (user == null) {
-                user = new User();
-                user.setId(params[0]);
-                user.setEmail(params[1]);
-                userService.insert(user).execute();
-            }
-            GlobalVars.setUser(user);
-        } catch (IOException e) {
-            GlobalVars.setFailed(true);
-        }
-        return user;
-    }
 
-    @Override
-    protected void onPostExecute(User user) {
-        if (user == null) {
-            activity.startActivity(new Intent(activity.getBaseContext(), CreateUser.class));
-        } else {
-            activity.startActivity(new Intent(activity.getBaseContext(), MainActivity.class));
+        // SEND MESSAGE
+        try {
+            Log.d(TAG, "Sending message");
+            userService.sendMessage(userId, chatId, message).execute();
+            Log.d(TAG, "Sent message");
+        } catch (IOException e) {
+            Log.d(TAG, "Failed to sent message");
         }
+
+        return null;
     }
 }

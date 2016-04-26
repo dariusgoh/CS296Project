@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +36,7 @@ public class DisplayInterests extends AppCompatActivity {
     private ArrayList<Integer> selected_indices = new ArrayList<Integer>();
     private Button button_delete;
     private boolean modified = false;
+    private static String TAG = "DisplayInts";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +65,20 @@ public class DisplayInterests extends AppCompatActivity {
         user.setInterests(interests);
         ((GlobalVars) this.getApplication()).saveState(savedInstanceState);
         if (modified) {
-            new AsyncUpdateUser().execute(user);
+            List<String> origInterests = user.getInterests();
+            List<String> newInterests;
+            List<String> deletedInterests;
+            if (origInterests == null) {
+                deletedInterests = new ArrayList<>();
+                newInterests = interests;
+            } else {
+                newInterests = new ArrayList<>(interests);
+                deletedInterests = new ArrayList<>(origInterests);
+                newInterests.removeAll(origInterests);
+                deletedInterests.removeAll(interests);
+            }
+            user.setInterests(interests);
+            new AsyncUpdateUser(newInterests, deletedInterests).execute(user.getId());
         }
     }
 
@@ -143,9 +158,40 @@ public class DisplayInterests extends AppCompatActivity {
     }
 
     public void onClickReturn(View view) {
+        Log.d(TAG, "Returning to main activity");
         if (modified) {
+            modified = false;
+            Log.d(TAG, "Interests have been modified, need to update DB");
+            List<String> origInterests = user.getInterests();
+            List<String> newInterests;
+            List<String> deletedInterests;
+            if (origInterests == null) {
+                for (int i = 0; i < interests.size(); ++i) {
+                    Log.d(TAG, "new interest: " + interests.get(i));
+                }
+                newInterests = interests;
+                deletedInterests = new ArrayList<>();
+                deletedInterests.add("");
+                Log.d(TAG, "no interests to delete");
+            } else {
+                newInterests = new ArrayList<>(interests);
+                deletedInterests = new ArrayList<>(origInterests);
+                newInterests.removeAll(origInterests);
+                deletedInterests.removeAll(interests);
+                if (newInterests.isEmpty()) {
+                    newInterests.add("");
+                }
+                for (String ints : newInterests) {
+                    Log.d(TAG, "new interest: " + ints);
+                }
+                for (String ints : deletedInterests) {
+                    Log.d(TAG, "deleted interest: " + ints);
+                }
+            }
             user.setInterests(interests);
-            new AsyncUpdateUser().execute(user);
+            new AsyncUpdateUser(newInterests, deletedInterests).execute(user.getId());
+        } else {
+            Log.d(TAG, "Interests have not been modified");
         }
         startActivity(new Intent(this, MainActivity.class));
     }

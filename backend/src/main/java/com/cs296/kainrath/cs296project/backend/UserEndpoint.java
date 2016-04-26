@@ -1,6 +1,10 @@
 package com.cs296.kainrath.cs296project.backend;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
+
+import com.google.android.gcm.server.Message;
+import com.google.android.gcm.server.MulticastResult;
+import com.google.android.gcm.server.Sender;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
@@ -11,6 +15,7 @@ import com.google.appengine.api.datastore.QueryResultIterator;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.cmd.Query;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -46,10 +51,41 @@ public class UserEndpoint {
 
     private static final Logger logger = Logger.getLogger(UserEndpoint.class.getName());
 
-    private static final int DEFAULT_LIST_LIMIT = 20;
+    private static final String API_KEY = "AIzaSyAJuwfy0EoirghnDaThupzrqNTDVxsm650";
 
+    /*
     static {
         ObjectifyService.register(User.class);
+    }*/
+
+    @ApiMethod(name = "sendMessage")
+    public void sendMessage(@Named("userId") String userId, @Named("chatId") Integer chatId, @Named("message") String message) {
+        try {
+            Class.forName(driver);
+            Connection conn = DriverManager.getConnection(url);
+
+            ResultSet tokenSet = conn.createStatement().executeQuery("SELECT Token FROM ChatUsers WHERE ChatId=" + chatId);
+            List<String> tokens = new ArrayList<>();
+            while (tokenSet.next()) {
+                tokens.add(tokenSet.getString("Token"));
+            }
+
+            Sender sender = new Sender(API_KEY);
+            Message msg = new Message.Builder().addData("Action", "NewMessage").addData("UserId", userId)
+                    .addData("ChatId", "" + chatId).addData("Message", message).build();
+
+            MulticastResult mr = sender.send(msg, tokens, 3);
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return;
+        } catch (SQLException e) {
+            String error = e.getSQLState();
+            return;
+        } catch (IOException e) {
+            String error = e.getMessage();
+            return;
+        }
     }
 
     /**
@@ -156,6 +192,7 @@ public class UserEndpoint {
             user = new User();
             user.setId(user_id);
             user.setEmail(email);
+            user.setToken(token);
             Set<String> interest_set = new TreeSet<String>();
             if (result.next()) {
                 ResultSet int_result = conn.createStatement().executeQuery("SELECT Interest FROM UserInterests WHERE UserId=\"" +
@@ -166,8 +203,8 @@ public class UserEndpoint {
                 conn.createStatement().executeUpdate("UPDATE UserInfo SET Token=\"" + token + "\" WHERE UserId=\""
                         + user_id + "\"");
             } else { // NEW USER, NOT IN DATABASE
-                String add_user = "INSERT INTO UserInfo (UserId, Email, Token) VALUES (\"" + user_id +
-                        "\", \"" + email + "\", \"" + token + "\"";
+                String add_user = "INSERT INTO UserInfo (UserId, Email, Token, Active) VALUES (\"" + user_id +
+                        "\", \"" + email + "\", \"" + token + "\", \"N\")";
                 conn.createStatement().executeUpdate(add_user);
             }
             user.setInterests(interest_set);
@@ -264,7 +301,7 @@ public class UserEndpoint {
             Class.forName(driver);
             Connection conn = DriverManager.getConnection(url);
 
-            if (!add.isEmpty()) {
+            if (add.get(0) != "") {
                 String adds = "INSERT INTO UserInterests (UserId, Interest) VALUES (\"" +
                         user_id + "\", \"" + add.get(0) + "\")";
                 for (int i = 1; i < add.size(); ++i) {
@@ -273,7 +310,7 @@ public class UserEndpoint {
                 conn.createStatement().executeUpdate(adds);
             }
 
-            if (!remove.isEmpty()) {
+            if (remove.get(0) != "") {
                 String delete = "DELETE FROM UserInterests WHERE UserId=\"" + user_id + "\" AND Interest IN (\"" +
                         remove.get(0) + "\"";
                 for (int i = 1; i < remove.size(); ++i) {

@@ -46,7 +46,8 @@ public class LocationTrackerService extends Service {
             // send information to the database
             Log.d(TAG, "Updating location");
             GlobalVars.setLatLong(location.getLatitude(), location.getLongitude());
-            new AsyncUpdateLocation(user_id, appContext).execute(location.getLatitude(), location.getLongitude());
+            new AsyncUpdateLocation(user_id, appContext, GlobalVars.getUser().getToken(),
+                    GlobalVars.getUser().getInterests(), GlobalVars.getChatGroups()).execute(location.getLatitude(), location.getLongitude());
         }
 
         @Override
@@ -88,7 +89,8 @@ public class LocationTrackerService extends Service {
         if (locationManager != null) {
             try {
                 locationManager.removeUpdates(locListener);
-                new AsyncDeactivateUser().execute(user_id);
+                Log.d(TAG, "Starting AsyncDeactivateUser");
+                new AsyncDeactivateUser(GlobalVars.getLat(), GlobalVars.getLong()).execute(user_id);
             } catch (SecurityException e) {
                 // Already checked for permissions in MainActivity
             }
@@ -118,7 +120,7 @@ public class LocationTrackerService extends Service {
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         try {
             locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 6000, 20, locListener);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30000, 25, locListener);
             Log.d(TAG, "Requested location updates");
         } catch (SecurityException e) {
             Log.d(TAG, "Security exception when creating location tracking service");

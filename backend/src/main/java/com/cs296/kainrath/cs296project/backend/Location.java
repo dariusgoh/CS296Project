@@ -57,4 +57,12 @@ public class Location {
                           (1 - Math.cos((other.longitude - this.longitude) * deg2rad))/2;
         return 12742000 * Math.asin(Math.sqrt(distance)); // Earths radius in m (6371000) * 2 precomputed
     }
+
+    public double distanceTo(double lat, double lon) {
+        double deg2rad = 0.017453292519943295;  // PI / 180 precomputed to save time
+        double distance = 0.5 - Math.cos((lat - this.latitude) * deg2rad)/2 +
+                Math.cos(this.latitude * deg2rad) * Math.cos(lat * deg2rad) *
+                        (1 - Math.cos((lon - this.longitude) * deg2rad))/2;
+        return 12742000 * Math.asin(Math.sqrt(distance)); // Earths radius in m (6371000) * 2 precomputed
+    }
 }

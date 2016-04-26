@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
     private void logout() {
         Log.d(TAG, "starting logout");
         GlobalVars.setUser(null);
-        GlobalVars.setNearbyUsers(null);
+        GlobalVars.setChatGroups(null);
         GlobalVars.setLatLong(0,0);
         if (LocationTrackerService.isInstanceCreated()) {
             Log.d(TAG, "stopping location service");
