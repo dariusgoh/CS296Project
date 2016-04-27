@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 
 import com.cs296.kainrath.cs296project.backend.userApi.model.User;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,10 +33,11 @@ public class DisplayInterests extends AppCompatActivity {
     private User user;
     private ArrayList<String> interests;
     private ListView list;
-    private CustomAdapter list_adapter;
+    private InterestAdaptor list_adapter;
     private ArrayList<Integer> selected_indices = new ArrayList<Integer>();
     private Button button_delete;
     private boolean modified = false;
+    private static String TAG = "DisplayInts";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,18 +65,34 @@ public class DisplayInterests extends AppCompatActivity {
         super.onSaveInstanceState(savedInstanceState);
         user.setInterests(interests);
         ((GlobalVars) this.getApplication()).saveState(savedInstanceState);
-        new AsyncUpdateUser().execute(user);
+        if (modified) {
+            List<String> origInterests = user.getInterests();
+            List<String> newInterests;
+            List<String> deletedInterests;
+            if (origInterests == null) {
+                deletedInterests = new ArrayList<>();
+                newInterests = interests;
+            } else {
+                newInterests = new ArrayList<>(interests);
+                deletedInterests = new ArrayList<>(origInterests);
+                newInterests.removeAll(origInterests);
+                deletedInterests.removeAll(interests);
+            }
+            user.setInterests(interests);
+            new AsyncUpdateUser(newInterests, deletedInterests).execute(user.getId());
+        }
     }
 
     private void displayInterests() {
         button_delete = (Button) findViewById(R.id.button_remove);
         button_delete.setEnabled(false);
         list = (ListView) findViewById(R.id.list_interests);
-        interests = (ArrayList<String>) user.getInterests();
+        interests = new ArrayList<String>();
+        interests.addAll(user.getInterests());
         if (interests == null) {
             interests = new ArrayList<String>();
         }
-        list_adapter = new CustomAdapter(this, R.layout.list_item, interests, selected_indices);
+        list_adapter = new InterestAdaptor(this, R.layout.list_item, interests, selected_indices);
         list.setAdapter(list_adapter);
     }
 
@@ -115,6 +134,7 @@ public class DisplayInterests extends AppCompatActivity {
                     interests.add(input.getText().toString());
                     modified = true;
                     list_adapter.notifyDataSetChanged();
+                    Log.d(TAG, "added an interest");
                 }
             }
         });
@@ -138,25 +158,64 @@ public class DisplayInterests extends AppCompatActivity {
         }
         modified = true;
         list_adapter.notifyDataSetChanged();
+        Log.d(TAG, "removed interest(s)");
     }
 
     public void onClickReturn(View view) {
+        Log.d(TAG, "Returning to main activity");
         if (modified) {
+            modified = false;
+            Log.d(TAG, "Interests have been modified, need to update DB");
+            List<String> origInterests = user.getInterests();
+            List<String> newInterests;
+            List<String> deletedInterests;
+            if (origInterests == null) {
+                for (int i = 0; i < interests.size(); ++i) {
+                    Log.d(TAG, "new interest: " + interests.get(i));
+                }
+                newInterests = interests;
+                deletedInterests = new ArrayList<>();
+                deletedInterests.add("");
+                Log.d(TAG, "no interests to delete");
+            } else {
+                newInterests = new ArrayList<>(interests);
+                Log.d(TAG, "newInterests size: " + newInterests.size());
+                deletedInterests = new ArrayList<>(origInterests);
+                newInterests.removeAll(origInterests);
+                Log.d(TAG, "newInterests size: " + newInterests.size());
+                deletedInterests.removeAll(interests);
+                if (newInterests.isEmpty()) {
+                    newInterests.add("");
+                    Log.d(TAG, "No new interests");
+                }
+                if (deletedInterests.isEmpty()) {
+                    deletedInterests.add("");
+                    Log.d(TAG, "No interests to remove");
+                }
+                for (String ints : newInterests) {
+                    Log.d(TAG, "new interest: " + ints);
+                }
+                for (String ints : deletedInterests) {
+                    Log.d(TAG, "deleted interest: " + ints);
+                }
+            }
             user.setInterests(interests);
-            new AsyncUpdateUser().execute(user);
+            new AsyncUpdateUser(newInterests, deletedInterests).execute(user.getId());
+        } else {
+            Log.d(TAG, "Interests have not been modified");
         }
         startActivity(new Intent(this, MainActivity.class));
     }
 }
 
-class CustomAdapter extends ArrayAdapter<String> {
+class InterestAdaptor extends ArrayAdapter<String> {
 
     List<String> interest_list;
     List<Integer> selected;
 
     private static LayoutInflater inflater=null;
 
-    public CustomAdapter(Context context, int textResId, ArrayList<String> list, ArrayList<Integer> selected) {
+    public InterestAdaptor(Context context, int textResId, ArrayList<String> list, ArrayList<Integer> selected) {
         super(context, textResId, list);
         this.interest_list = list;
         this.selected = selected;

@@ -7,9 +7,9 @@ package com.cs296.kainrath.cs296project.backend;
  */
 
 public class Location {
-    public static final String LAT_FIELD = "latitude";
-    public static final String LONG_FIELD = "longitude";
-    public static final String ID_FIELD = "user_id";
+    public static final String LAT_FIELD = "Latitude";
+    public static final String LONG_FIELD = "Longitude";
+    public static final String ID_FIELD = "UserId";
 
     private String user_id;
 
@@ -55,6 +55,14 @@ public class Location {
         double distance = 0.5 - Math.cos((other.latitude - this.latitude) * deg2rad)/2 +
                           Math.cos(this.latitude * deg2rad) * Math.cos(other.latitude * deg2rad) *
                           (1 - Math.cos((other.longitude - this.longitude) * deg2rad))/2;
+        return 12742000 * Math.asin(Math.sqrt(distance)); // Earths radius in m (6371000) * 2 precomputed
+    }
+
+    public double distanceTo(double lat, double lon) {
+        double deg2rad = 0.017453292519943295;  // PI / 180 precomputed to save time
+        double distance = 0.5 - Math.cos((lat - this.latitude) * deg2rad)/2 +
+                Math.cos(this.latitude * deg2rad) * Math.cos(lat * deg2rad) *
+                        (1 - Math.cos((lon - this.longitude) * deg2rad))/2;
         return 12742000 * Math.asin(Math.sqrt(distance)); // Earths radius in m (6371000) * 2 precomputed
     }
 }

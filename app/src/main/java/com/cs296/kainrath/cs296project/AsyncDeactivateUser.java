@@ -1,24 +1,47 @@
 package com.cs296.kainrath.cs296project;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.cs296.kainrath.cs296project.backend.locationApi.LocationApi;
-import com.cs296.kainrath.cs296project.backend.userApi.UserApi;
-import com.cs296.kainrath.cs296project.backend.userApi.model.User;
+import com.cs296.kainrath.cs296project.backend.locationApi.model.ChatGroup;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Created by kainrath on 4/5/16.
  */
 public class AsyncDeactivateUser extends AsyncTask<String, Void, Void> {
-    LocationApi locationService = null;
+    //private LocationApi locationService = null;
+    private double lat, lon;
+    private String TAG = "AsyncDeact";
+    private String chatIds = "";
+
+    public AsyncDeactivateUser(double lat, double lon) {
+        List<ChatGroup> chatGroups = GlobalVars.getChatGroups();
+        if (chatGroups != null && !chatGroups.isEmpty()) {
+            chatIds += chatGroups.get(0).getChatId();
+            for (int i = 1; i < chatGroups.size(); ++i) {
+                chatIds += "," + chatGroups.get(i).getChatId();
+            }
+        }
+
+        GlobalVars.emptyChatGroup();
+        this.lat = lat;
+        this.lon = lon;
+        Log.d(TAG, "Creating async object, lat: " + lat + ", lon: " + lon);
+    }
 
     @Override
     protected Void doInBackground(String... params) {
+        LocationApi locationService = GlobalVars.locationApi;
         if (locationService == null) {
+            Log.d(TAG, "locationService is null, generating locationService");
             LocationApi.Builder builder = new LocationApi.Builder(AndroidHttp.newCompatibleTransport(),
                     new AndroidJsonFactory(), null)
                     .setRootUrl("https://cs296-backend.appspot.com/_ah/api/");
@@ -38,9 +61,13 @@ public class AsyncDeactivateUser extends AsyncTask<String, Void, Void> {
             // End options for devappserver
 
             locationService = builder.build();
+            Log.d(TAG, "locationService generated");
+            GlobalVars.locationApi = locationService;
         }
         try {
-            locationService.deactivateUser(params[0]).execute();
+            Log.d(TAG, "Calling server function");
+            locationService.deactivateUser(params[0], lat, lon, chatIds).execute();
+            Log.d(TAG, "Back from server function");
         } catch (IOException e) {
 
         }

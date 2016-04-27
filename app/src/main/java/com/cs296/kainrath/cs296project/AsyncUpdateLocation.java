@@ -1,37 +1,52 @@
 package com.cs296.kainrath.cs296project;
 
-import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.cs296.kainrath.cs296project.backend.locationApi.LocationApi;
-import com.cs296.kainrath.cs296project.backend.locationApi.model.Location;
-import com.cs296.kainrath.cs296project.backend.locationApi.model.UserList;
-import com.cs296.kainrath.cs296project.backend.locationApi.model.User;
+import com.cs296.kainrath.cs296project.backend.locationApi.model.ChatGroup;
+import com.cs296.kainrath.cs296project.backend.locationApi.model.ChatGroupList;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by Darius on 4/5/2016.
  */
-public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
-    private LocationApi locationService = null;
+public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>> {
+    //private LocationApi locationService = null;
     private String userID = null;
     private Context context = null;
+    private String token = null;
+    private List<String> interests = null;
+    private ChatGroupList chatGroupList = null;
+    private static final String TAG = "AsyncLocUpdate";
 
-    public AsyncUpdateLocation(String userID, Context context) {
+    public AsyncUpdateLocation(String userID, Context context, String token, List<String> interests, List<ChatGroup> chatGroups) {
         this.userID = userID;
         this.context = context;
+        this.token = token;
+        this.interests = interests;
+        chatGroupList = new ChatGroupList();
+        chatGroupList.setChatGroups(chatGroups);
+        Log.d(TAG, "userId: " + userID + ", token: " + token);
+        if (chatGroups == null || chatGroups.isEmpty()) {
+            Log.d(TAG, "chatGroups is null or empty");
+        } else {
+            Log.d(TAG, "chatGroups is not null nor empty");
+        }
     }
 
     @Override  // Runs in a separate thread
-    protected List<User> doInBackground(Double... params) {
+    protected List<ChatGroup> doInBackground(Double... params) {
+        LocationApi locationService = GlobalVars.locationApi;
         if (locationService == null) {
+            Log.d(TAG, "LocationApi is null, generating locationService");
             LocationApi.Builder builder = new LocationApi.Builder(AndroidHttp.newCompatibleTransport(),
                     new AndroidJsonFactory(), null)
                     .setRootUrl("https://cs296-backend.appspot.com/_ah/api/");
@@ -51,29 +66,36 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<User>> {
             // End options for devappserver
 
             locationService = builder.build();
+            Log.d(TAG, "locationService generated");
+            GlobalVars.locationApi = locationService;
         }
-        UserList nearby_users = null;
+        ChatGroupList chatGroupList = null;
         try {
             // locationService.updateLocation(userID, params[0], params[1]).execute();
-            nearby_users = locationService.updateLocation(userID, params[0], params[1]).execute();
+            chatGroupList = locationService.updateLocation(userID, params[0], params[1], interests, token, chatGroupList).execute();
+            Log.d(TAG, "Update location");
         } catch (IOException e) {
-
+            Log.d(TAG, "IOException when trying to update location");
         }
-        if (nearby_users != null) {
-            return nearby_users.getUsers();
+        if (chatGroupList != null && chatGroupList.getChatGroups() != null) {
+            List<ChatGroup> chatGroups = chatGroupList.getChatGroups();
+            Log.d(TAG, "update location returned #" + chatGroups.size());
+            return chatGroups;
         } else {
+            Log.d(TAG, "update location return null");
             return null;
         }
     }
 
     @Override
-    protected void onPostExecute(List<User> nearby_users) {
-        if (nearby_users == null || nearby_users.size() == 0) {
-            Toast.makeText(context, "No nearby users with matching interests", Toast.LENGTH_SHORT).show();
+    protected void onPostExecute(List<ChatGroup> chatGroups) {
+        if (chatGroups == null) {
+            Toast.makeText(context, "Failed to find nearby chat groups", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "No nearby chat groups");
         } else {
-            for (User user : nearby_users) {
-                GlobalVars.addNearbyUser(user.getId(), user.getEmail(), user.getInterests());
-            }
+            Log.d(TAG, "Found nearby chat groups");
+            GlobalVars.addChatGroups(chatGroups);
+            context.sendBroadcast(new Intent("ChatUpdate"));
         }
     }
 }

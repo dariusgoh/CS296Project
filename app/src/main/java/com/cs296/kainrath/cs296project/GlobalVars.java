@@ -1,25 +1,38 @@
 package com.cs296.kainrath.cs296project;
 
+import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.ListView;
 
+import com.cs296.kainrath.cs296project.backend.locationApi.LocationApi;
+import com.cs296.kainrath.cs296project.backend.locationApi.model.ChatGroup;
+import com.cs296.kainrath.cs296project.backend.userApi.UserApi;
 import com.cs296.kainrath.cs296project.backend.userApi.model.User;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Created by kainrath on 3/24/16.
  */
 public class GlobalVars extends Application {
-    private static List<User> nearby_users = null;
+    private static String TAG = "GlobalVars";
+
+    public static UserApi userApi = null;
+    public static LocationApi locationApi = null;
+
+    public static List<ChatGroup> chatGroups = new ArrayList<ChatGroup>();
     private static User user = null;
     private static boolean failed = false;
 
-    private static double latit = 0;
-    private static double longit = 0;
-    // private boolean has_user = false;
+    private static double latit = -200;
+    private static double longit = -200;
 
     private static final String email = "user_email";
     private static final String id = "user_id";
@@ -38,7 +51,7 @@ public class GlobalVars extends Application {
         return longit;
     }
 
-    public static void setUser(User ouser) { user = ouser; }
+    public static void setUser(User usr) { user = usr; }
 
     public static User getUser() { return user; }
 
@@ -46,6 +59,65 @@ public class GlobalVars extends Application {
 
     public static void setFailed(boolean result) { failed = result; }
 
+    public static void removeFromGroup(int chatId, String userId) {
+        for (ChatGroup g : chatGroups) {
+            if (g.getChatId() == chatId) {
+                List<String> userIds = g.getUserIds();
+                g.remove(userId);
+                g.setUserIds(userIds);
+                g.setGroupSize(g.getGroupSize() - 1);
+                Log.d(TAG, "removing " + userId + " from chatgroup " + chatId + ", new size " + g.getGroupSize());
+                return;
+            }
+        }
+    }
+
+    public static void addToGroup(int chatId, String userId) {
+        for (ChatGroup g : chatGroups) {
+            if (g.getChatId() == chatId) {
+                List<String> userIds = g.getUserIds();
+                userIds.add(userId);
+                g.setUserIds(userIds);
+                g.setGroupSize(g.getGroupSize() + 1);
+                Log.d(TAG, "adding " + userId + " to chatgroup " + chatId + ", new size " + g.getGroupSize());
+            }
+        }
+    }
+
+    public static void addChatGroups(List<ChatGroup> groups) {
+        Log.d(TAG, "Adding chat groups");
+        chatGroups.clear();
+        chatGroups.addAll(groups);
+        Log.d(TAG, chatGroups.size() + " chat groups");
+    }
+
+    public static void emptyChatGroup() {
+        chatGroups.clear();
+    }
+
+    public static List<ChatGroup> getChatGroups() {
+        return chatGroups;
+    }
+
+    public Bundle saveState(Bundle instance) {
+        if (user != null) {
+            instance.putString(id, user.getId());
+            instance.putString(email, user.getEmail());
+            instance.putStringArrayList(interests, (ArrayList<String>) user.getInterests());
+        }
+        return instance;
+    }
+
+    public Bundle restoreState(Bundle instance) {
+        if (instance.getString(id) != null) {
+            user = new User();
+            user.setEmail(instance.getString(email));
+            user.setId(instance.getString(id));
+            user.setInterests(instance.getStringArrayList(interests));
+        }
+        return instance;
+    }
+    /*
     public static String getNearbyUserString() {
         if (nearby_users == null || nearby_users.isEmpty()) {
             return "No Users Nearby";
@@ -90,26 +162,5 @@ public class GlobalVars extends Application {
             }
         }
         nearby_users.add(nearby_user);
-    }
-
-    public Bundle saveState(Bundle instance) {
-        if (user != null) {
-            instance.putString(id, user.getId());
-            instance.putString(email, user.getEmail());
-            instance.putStringArrayList(interests, (ArrayList<String>) user.getInterests());
-        }
-        return instance;
-    }
-
-    public Bundle restoreState(Bundle instance) {
-        if (instance.getString(id) != null) {
-            user = new User();
-            user.setEmail(instance.getString(email));
-            user.setId(instance.getString(id));
-            user.setInterests(instance.getStringArrayList(interests));
-        }
-        return instance;
-    }
-
-
+    }*/
 }
