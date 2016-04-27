@@ -1,6 +1,7 @@
 package com.cs296.kainrath.cs296project;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -26,19 +27,26 @@ public class UserListenerService extends GcmListenerService {
 
         String action = data.getString("Action");
         if (action.equals("LeavingGroup")) {
-            GlobalVars.removeFromGroup(data.getInt("ChatId"), data.getString("UserId"));
+            Log.d(TAG, "A user is leaving a group");
+            int chatId = Integer.parseInt(data.getString("ChatId"));
+            GlobalVars.removeFromGroup(chatId, data.getString("UserId"));
         } else if (action.equals("JoiningGroup")) {
-            GlobalVars.addToGroup(data.getInt("ChatId"), data.getString("UserId"));
+            Log.d(TAG, "A user is joining a group");
+            int chatId = Integer.parseInt(data.getString("ChatId"));
+            GlobalVars.addToGroup(chatId, data.getString("UserId"));
         } else if (action.equals("NewMessage")) {
+            Log.d(TAG, "Received a message from a chat group");
             newMessage(from, data);
         } else {
             Log.d(TAG, "Received unknown gcm message");
+            return;
         }
+        this.sendBroadcast(new Intent("ChatUpdate"));
     }
 
     private void newMessage(String from, Bundle data) {
         String user = data.getString("UserId");
-        int chatId = data.getInt("ChatId");
+        int chatId = Integer.parseInt(data.getString("ChatId"));
         String message = data.getString("Message");
         // DO SOMETHING WITH MESSAGE
     }

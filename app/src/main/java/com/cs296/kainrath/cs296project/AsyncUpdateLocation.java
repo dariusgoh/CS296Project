@@ -1,6 +1,7 @@
 package com.cs296.kainrath.cs296project;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
@@ -94,6 +95,7 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>
         } else {
             Log.d(TAG, "Found nearby chat groups");
             GlobalVars.addChatGroups(chatGroups);
+            context.sendBroadcast(new Intent("ChatUpdate"));
         }
     }
 }

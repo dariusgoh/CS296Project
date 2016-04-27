@@ -22,9 +22,10 @@ public class AsyncUpdateUser extends AsyncTask<String, Void, Void> {
     private static String TAG = "AsyncUpdateUser";
 
     public AsyncUpdateUser(List<String> add, List<String> remove) {
-        removedInterests = new ArrayList<>(remove);
-        addedInterests = new ArrayList<>(add);
+        removedInterests = remove;
+        addedInterests = add;
         Log.d(TAG, "removing " + removedInterests.size() + ", adding: " + addedInterests.size());
+        Log.d(TAG, "removing(0): " + removedInterests.get(0) + ", adding(0): " + addedInterests.get(0));
     }
 
     @Override

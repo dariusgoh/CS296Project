@@ -301,7 +301,7 @@ public class UserEndpoint {
             Class.forName(driver);
             Connection conn = DriverManager.getConnection(url);
 
-            if (add.get(0) != "") {
+            if (!add.get(0).equals("")) {
                 String adds = "INSERT INTO UserInterests (UserId, Interest) VALUES (\"" +
                         user_id + "\", \"" + add.get(0) + "\")";
                 for (int i = 1; i < add.size(); ++i) {
@@ -310,7 +310,7 @@ public class UserEndpoint {
                 conn.createStatement().executeUpdate(adds);
             }
 
-            if (remove.get(0) != "") {
+            if (!remove.get(0).equals("")) {
                 String delete = "DELETE FROM UserInterests WHERE UserId=\"" + user_id + "\" AND Interest IN (\"" +
                         remove.get(0) + "\"";
                 for (int i = 1; i < remove.size(); ++i) {

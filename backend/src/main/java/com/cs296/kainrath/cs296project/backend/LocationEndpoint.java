@@ -93,6 +93,13 @@ public class LocationEndpoint {
         if (interests == null || interests.isEmpty()) { // Need to have some interests
             return null;
         }
+        // Interests is comma separated, single String, not a list for some reason
+        String ints = interests.get(0);
+        String[] split_interests = ints.split(",");
+        interests.clear();
+        for (String s : split_interests) {
+            interests.add(s);
+        }
 
         boolean firstUpdate = (chatGroupList == null) || (chatGroupList.getChatGroups() == null) || (chatGroupList.getChatGroups().isEmpty());
         Location userLocation = new Location(user_id, lat, lon);
@@ -166,7 +173,8 @@ public class LocationEndpoint {
 
         // Start a chat group for any interests that don't already have a chatgroup
         if (firstUpdate) {
-            List<String> unmatchedInterests = new ArrayList<>(interests);
+            List<String> unmatchedInterests = new ArrayList<>();
+            unmatchedInterests.addAll(interests);
             for (ChatGroup chat : currChatGroups) {
                 unmatchedInterests.remove(chat.getInterest());
             }
@@ -187,9 +195,21 @@ public class LocationEndpoint {
 
     @ApiMethod(name = "deactivateUser")
     public void deactivateUser(@Named("user_id") String user_id, @Named("lat") double lat,
-                               @Named("lon") double lon, @Named("chatIds") List<Integer> chatIds) {
-        // Location location = new Location();
-        // location.setUser_id(user_id);
+                               @Named("lon") double lon, @Named("chatIdString") String chatIdString) {
+
+        // chatIds was List<Integer>, but if there are multiple chatIds, then the
+        // list would be a comma separated string of the integers and the call to this function
+        // failed
+
+        // chatIds is list of comma separated numbers, not actual list
+        List<Integer> chatIds = new ArrayList<>();
+        if (chatIdString != null) {
+            String[] ids_split = chatIdString.split(",");
+            for (String s : ids_split) {
+                chatIds.add(Integer.parseInt(s));
+            }
+        }
+
         logger.info("Calling deactivateUser method");
         Connection conn;
         try {
@@ -197,6 +217,7 @@ public class LocationEndpoint {
             Class.forName("com.mysql.jdbc.GoogleDriver");
             conn = DriverManager.getConnection(url);
 
+            // GET CHATGROUP INFORMATION
             String groupQuery = "SELECT * FROM ChatGroups WHERE ChatId=" + chatIds.get(0);
             for (int i = 1; i < chatIds.size(); ++i) {
                 groupQuery += " OR ChatId=" + chatIds.get(i);
@@ -211,14 +232,16 @@ public class LocationEndpoint {
 
 
 
-            // Make them "Offline"
+            // Make user "Offline"
             String offlineUpdate = "UPDATE UserInfo SET Active=\"N\" WHERE UserId=\"" + user_id + "\"";
             conn.createStatement().executeUpdate(offlineUpdate);
 
-            String destroyChatGroupUpdate = "DELETE FROM ChatGroups WHERE ChatId=";
-            String destroyChatUserUpdate = "DELETE FROM ChatUsers WHERE ChatId=";
-            boolean removed = false;
+            // Should not be null or empty, but make sure
             if (currChatGroups != null || !currChatGroups.isEmpty()) {
+                // These destroy updates are only for chats with size 1
+                String destroyChatGroupUpdate = "DELETE FROM ChatGroups WHERE ChatId=";
+                String destroyChatUserUpdate = "DELETE FROM ChatUsers WHERE ChatId=";
+                boolean removed = false;
                 for (ChatGroup group : currChatGroups) {
                     if (group.getGroupSize() == 1) { // User is only member, destroy group
                         if (removed) {
@@ -234,13 +257,14 @@ public class LocationEndpoint {
                         leaveChatGroup(conn, user_id, group);
                     }
                 }
+                if (removed) {
+                    Statement stmt = conn.createStatement();
+                    stmt.addBatch(destroyChatGroupUpdate);
+                    stmt.addBatch(destroyChatUserUpdate);
+                    stmt.executeBatch();
+                }
             }
-            if (removed) {
-                Statement stmt = conn.createStatement();
-                stmt.addBatch(destroyChatGroupUpdate);
-                stmt.addBatch(destroyChatUserUpdate);
-                stmt.executeBatch();
-            }
+
 
             conn.close();
 
@@ -450,10 +474,13 @@ public class LocationEndpoint {
         try {
             // Remove from DB
             Statement stmt = conn.createStatement();
-            stmt.addBatch("DELETE FROM ChatUsers WHERE UserId=\"" + user_id +
-                    "\" AND ChatId=" + group.getChatId());
-            stmt.addBatch("UPDATE ChatGroups SET Latitude=" + group.getLatitude() + ", Longitude=" + group.getLongitude() +
-                            ", GroupSize=" + group.getGroupSize() + " WHERE ChatId=" + group.getChatId());
+            String deleteChatUser = "DELETE FROM ChatUsers WHERE UserId=\"" + user_id + "\" AND ChatId=" +
+                    group.getChatId();
+            String updateChatGroup = "UPDATE ChatGroups SET Latitude=" + group.getLatitude() + ", Longitude=" + group.getLongitude() +
+                    ", GroupSize=" + group.getGroupSize() + " WHERE ChatId=" + group.getChatId();
+            stmt.addBatch(deleteChatUser);
+            stmt.addBatch(updateChatGroup);
+            stmt.executeBatch();
 
             // Get other users from DB
             String groupUsers = "SELECT Token FROM ChatUsers WHERE ChatId=" + group.getChatId();

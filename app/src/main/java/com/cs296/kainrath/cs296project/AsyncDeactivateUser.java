@@ -20,13 +20,18 @@ public class AsyncDeactivateUser extends AsyncTask<String, Void, Void> {
     //private LocationApi locationService = null;
     private double lat, lon;
     private String TAG = "AsyncDeact";
-    private List<Integer> chatIds;
+    private String chatIds = "";
 
     public AsyncDeactivateUser(double lat, double lon) {
-        this.chatIds = new ArrayList<>();
-        for (ChatGroup group : GlobalVars.getChatGroups()) {
-            chatIds.add(group.getChatId());
+        List<ChatGroup> chatGroups = GlobalVars.getChatGroups();
+        if (chatGroups != null && !chatGroups.isEmpty()) {
+            chatIds += chatGroups.get(0).getChatId();
+            for (int i = 1; i < chatGroups.size(); ++i) {
+                chatIds += "," + chatGroups.get(i).getChatId();
+            }
         }
+
+        GlobalVars.emptyChatGroup();
         this.lat = lat;
         this.lon = lon;
         Log.d(TAG, "Creating async object, lat: " + lat + ", lon: " + lon);
@@ -63,7 +68,6 @@ public class AsyncDeactivateUser extends AsyncTask<String, Void, Void> {
             Log.d(TAG, "Calling server function");
             locationService.deactivateUser(params[0], lat, lon, chatIds).execute();
             Log.d(TAG, "Back from server function");
-            GlobalVars.setChatGroups(null);
         } catch (IOException e) {
 
         }

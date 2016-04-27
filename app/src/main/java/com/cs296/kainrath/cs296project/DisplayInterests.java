@@ -23,6 +23,7 @@ import android.widget.Toast;
 
 import com.cs296.kainrath.cs296project.backend.userApi.model.User;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,7 @@ public class DisplayInterests extends AppCompatActivity {
     private User user;
     private ArrayList<String> interests;
     private ListView list;
-    private CustomAdapter list_adapter;
+    private InterestAdaptor list_adapter;
     private ArrayList<Integer> selected_indices = new ArrayList<Integer>();
     private Button button_delete;
     private boolean modified = false;
@@ -86,11 +87,12 @@ public class DisplayInterests extends AppCompatActivity {
         button_delete = (Button) findViewById(R.id.button_remove);
         button_delete.setEnabled(false);
         list = (ListView) findViewById(R.id.list_interests);
-        interests = (ArrayList<String>) user.getInterests();
+        interests = new ArrayList<String>();
+        interests.addAll(user.getInterests());
         if (interests == null) {
             interests = new ArrayList<String>();
         }
-        list_adapter = new CustomAdapter(this, R.layout.list_item, interests, selected_indices);
+        list_adapter = new InterestAdaptor(this, R.layout.list_item, interests, selected_indices);
         list.setAdapter(list_adapter);
     }
 
@@ -132,6 +134,7 @@ public class DisplayInterests extends AppCompatActivity {
                     interests.add(input.getText().toString());
                     modified = true;
                     list_adapter.notifyDataSetChanged();
+                    Log.d(TAG, "added an interest");
                 }
             }
         });
@@ -155,6 +158,7 @@ public class DisplayInterests extends AppCompatActivity {
         }
         modified = true;
         list_adapter.notifyDataSetChanged();
+        Log.d(TAG, "removed interest(s)");
     }
 
     public void onClickReturn(View view) {
@@ -175,11 +179,18 @@ public class DisplayInterests extends AppCompatActivity {
                 Log.d(TAG, "no interests to delete");
             } else {
                 newInterests = new ArrayList<>(interests);
+                Log.d(TAG, "newInterests size: " + newInterests.size());
                 deletedInterests = new ArrayList<>(origInterests);
                 newInterests.removeAll(origInterests);
+                Log.d(TAG, "newInterests size: " + newInterests.size());
                 deletedInterests.removeAll(interests);
                 if (newInterests.isEmpty()) {
                     newInterests.add("");
+                    Log.d(TAG, "No new interests");
+                }
+                if (deletedInterests.isEmpty()) {
+                    deletedInterests.add("");
+                    Log.d(TAG, "No interests to remove");
                 }
                 for (String ints : newInterests) {
                     Log.d(TAG, "new interest: " + ints);
@@ -197,14 +208,14 @@ public class DisplayInterests extends AppCompatActivity {
     }
 }
 
-class CustomAdapter extends ArrayAdapter<String> {
+class InterestAdaptor extends ArrayAdapter<String> {
 
     List<String> interest_list;
     List<Integer> selected;
 
     private static LayoutInflater inflater=null;
 
-    public CustomAdapter(Context context, int textResId, ArrayList<String> list, ArrayList<Integer> selected) {
+    public InterestAdaptor(Context context, int textResId, ArrayList<String> list, ArrayList<Integer> selected) {
         super(context, textResId, list);
         this.interest_list = list;
         this.selected = selected;

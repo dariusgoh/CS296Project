@@ -1,7 +1,10 @@
 package com.cs296.kainrath.cs296project;
 
+import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.ListView;
 
 import com.cs296.kainrath.cs296project.backend.locationApi.LocationApi;
 import com.cs296.kainrath.cs296project.backend.locationApi.model.ChatGroup;
@@ -11,16 +14,20 @@ import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Created by kainrath on 3/24/16.
  */
 public class GlobalVars extends Application {
+    private static String TAG = "GlobalVars";
+
     public static UserApi userApi = null;
     public static LocationApi locationApi = null;
 
-    private static List<ChatGroup> chatGroups = null;
+    public static List<ChatGroup> chatGroups = new ArrayList<ChatGroup>();
     private static User user = null;
     private static boolean failed = false;
 
@@ -58,6 +65,8 @@ public class GlobalVars extends Application {
                 List<String> userIds = g.getUserIds();
                 g.remove(userId);
                 g.setUserIds(userIds);
+                g.setGroupSize(g.getGroupSize() - 1);
+                Log.d(TAG, "removing " + userId + " from chatgroup " + chatId + ", new size " + g.getGroupSize());
                 return;
             }
         }
@@ -69,27 +78,21 @@ public class GlobalVars extends Application {
                 List<String> userIds = g.getUserIds();
                 userIds.add(userId);
                 g.setUserIds(userIds);
+                g.setGroupSize(g.getGroupSize() + 1);
+                Log.d(TAG, "adding " + userId + " to chatgroup " + chatId + ", new size " + g.getGroupSize());
             }
         }
     }
 
     public static void addChatGroups(List<ChatGroup> groups) {
-        for (ChatGroup group : groups) {
-            addChatGroup(group);
-        }
+        Log.d(TAG, "Adding chat groups");
+        chatGroups.clear();
+        chatGroups.addAll(groups);
+        Log.d(TAG, chatGroups.size() + " chat groups");
     }
 
-    public static void addChatGroup(ChatGroup group) {
-        if (chatGroups == null) {
-            chatGroups = new ArrayList<>();
-        }
-        if (!chatGroups.contains(group)) {
-            chatGroups.add(group);
-        }
-    }
-
-    public static void setChatGroups(List<ChatGroup> chats) {
-        chatGroups = chats;
+    public static void emptyChatGroup() {
+        chatGroups.clear();
     }
 
     public static List<ChatGroup> getChatGroups() {

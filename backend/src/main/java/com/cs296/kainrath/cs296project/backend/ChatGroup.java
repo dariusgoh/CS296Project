@@ -15,6 +15,7 @@ public class ChatGroup {
     private double longitude;
     private String interest;
     private int groupSize;
+    private List<String> messages;
 
     public ChatGroup(String interest, int chatId, int groupSize, double latitude, double longitude) {
         this.interest = interest;
@@ -79,7 +80,7 @@ public class ChatGroup {
     }
 
     public void removeUserFromGroup(String user_id, double oldLat, double oldLong) {
-        if (groupSize > 1) {
+        if (groupSize >= 1) {
             this.latitude = (this.latitude * groupSize - oldLat) / (groupSize - 1);
             this.longitude = (this.longitude * groupSize - oldLong) / (groupSize - 1);
             --groupSize;
@@ -107,5 +108,23 @@ public class ChatGroup {
 
     public List<String> getUserIds() {
         return user_ids;
+    }
+
+    public List<String> getAllMessages() {
+        return messages;
+    }
+
+    public String getLastMessage() {
+        if (messages != null && !messages.isEmpty()) {
+            return messages.get(messages.size() - 1);
+        }
+        return null;
+    }
+
+    public void addMessage(String message) {
+        if (messages == null) {
+            messages = new ArrayList<>();
+        }
+        messages.add(message);
     }
 }
