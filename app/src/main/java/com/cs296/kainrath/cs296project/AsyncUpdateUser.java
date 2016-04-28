@@ -17,15 +17,23 @@ import java.util.List;
  */
 public class AsyncUpdateUser extends AsyncTask<String, Void, Void> {
     private UserApi userService = null;
-    private List<String> removedInterests = null;
-    private List<String> addedInterests = null;
+    private String addAll = "";
+    private String remAll = "";
     private static String TAG = "AsyncUpdateUser";
 
     public AsyncUpdateUser(List<String> add, List<String> remove) {
-        removedInterests = remove;
-        addedInterests = add;
-        Log.d(TAG, "removing " + removedInterests.size() + ", adding: " + addedInterests.size());
-        Log.d(TAG, "removing(0): " + removedInterests.get(0) + ", adding(0): " + addedInterests.get(0));
+        if (!add.get(0).equals("")) {
+            addAll += add.get(0);
+            for (int i = 1; i < add.size(); ++i) {
+                addAll += ",,," + add.get(i);
+            }
+        }
+        if (!remove.get(0).equals("")) {
+            remAll += remove.get(0);
+            for (int i = 1; i < remove.size(); ++i) {
+                remAll += ",,," + remove.get(i);
+            }
+        }
     }
 
     @Override
@@ -58,7 +66,7 @@ public class AsyncUpdateUser extends AsyncTask<String, Void, Void> {
 
         try {
             Log.d(TAG, "Calling server update function");
-            userService.update(params[0], addedInterests, removedInterests).execute();
+            userService.update(params[0], addAll, remAll).execute();
             Log.d(TAG, "Returned from server function");
         } catch (IOException e) {
             // Exception...

@@ -14,15 +14,15 @@ import java.io.IOException;
  * Created by kainrath on 4/25/16.
  */
 public class AsyncSendMessage extends AsyncTask<Void, Void, Void> {
-    private String userId;
     private int chatId;
     private String message;
+    private String email;
     private static String TAG = "AsyncSendMsg";
 
-    public AsyncSendMessage(String userId, int chatId, String message) {
-        this.userId = userId;
+    public AsyncSendMessage(String email, int chatId, String message) {
         this.message = message;
         this.chatId = chatId;
+        this.email = email;
     }
 
     @Override
@@ -54,7 +54,7 @@ public class AsyncSendMessage extends AsyncTask<Void, Void, Void> {
         // SEND MESSAGE
         try {
             Log.d(TAG, "Sending message");
-            userService.sendMessage(userId, chatId, message).execute();
+            userService.sendMessage(email, chatId, message).execute();
             Log.d(TAG, "Sent message");
         } catch (IOException e) {
             Log.d(TAG, "Failed to sent message");

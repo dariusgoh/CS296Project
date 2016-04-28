@@ -66,7 +66,7 @@ public class AsyncDeactivateUser extends AsyncTask<String, Void, Void> {
         }
         try {
             Log.d(TAG, "Calling server function");
-            locationService.deactivateUser(params[0], lat, lon, chatIds).execute();
+            locationService.deactivateUser(params[0], params[1], lat, lon, chatIds).execute();
             Log.d(TAG, "Back from server function");
         } catch (IOException e) {
 

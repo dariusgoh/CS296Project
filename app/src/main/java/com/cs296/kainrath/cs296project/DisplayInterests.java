@@ -87,11 +87,11 @@ public class DisplayInterests extends AppCompatActivity {
         button_delete = (Button) findViewById(R.id.button_remove);
         button_delete.setEnabled(false);
         list = (ListView) findViewById(R.id.list_interests);
-        interests = new ArrayList<String>();
-        interests.addAll(user.getInterests());
-        if (interests == null) {
-            interests = new ArrayList<String>();
+        if (GlobalVars.getUser().getInterests() == null) {
+            GlobalVars.getUser().setInterests(new ArrayList<String>());
         }
+        interests = new ArrayList<>(GlobalVars.getUser().getInterests());
+
         list_adapter = new InterestAdaptor(this, R.layout.list_item, interests, selected_indices);
         list.setAdapter(list_adapter);
     }
@@ -130,8 +130,8 @@ public class DisplayInterests extends AppCompatActivity {
         builder.setPositiveButton("Enter", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                if (!interests.contains(input.getText().toString())) {
-                    interests.add(input.getText().toString());
+                if (!interests.contains(input.getText().toString().trim())) {
+                    interests.add(input.getText().toString().trim());
                     modified = true;
                     list_adapter.notifyDataSetChanged();
                     Log.d(TAG, "added an interest");

@@ -19,6 +19,7 @@ public class LocationTrackerService extends Service {
     private static final String TAG = "LocTrackServ";
     private static final String USER_ID = "USER_ID";
     private String user_id;
+    private String email;
     //private Activity activity;
 
     private LocationManager locationManager;
@@ -46,7 +47,7 @@ public class LocationTrackerService extends Service {
             // send information to the database
             Log.d(TAG, "Updating location");
             GlobalVars.setLatLong(location.getLatitude(), location.getLongitude());
-            new AsyncUpdateLocation(user_id, appContext, GlobalVars.getUser().getToken(),
+            new AsyncUpdateLocation(user_id, email, appContext, GlobalVars.getUser().getToken(),
                     GlobalVars.getUser().getInterests(), GlobalVars.getChatGroups()).execute(location.getLatitude(), location.getLongitude());
         }
 
@@ -90,7 +91,7 @@ public class LocationTrackerService extends Service {
             try {
                 locationManager.removeUpdates(locListener);
                 Log.d(TAG, "Starting AsyncDeactivateUser");
-                new AsyncDeactivateUser(GlobalVars.getLat(), GlobalVars.getLong()).execute(user_id);
+                new AsyncDeactivateUser(GlobalVars.getLat(), GlobalVars.getLong()).execute(user_id, email);
             } catch (SecurityException e) {
                 // Already checked for permissions in MainActivity
             }
@@ -106,6 +107,7 @@ public class LocationTrackerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "starting location tracking service");
         user_id = intent.getStringExtra(USER_ID);
+        email = GlobalVars.getUser().getEmail();
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }

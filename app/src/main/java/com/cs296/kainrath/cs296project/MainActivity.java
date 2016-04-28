@@ -16,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -46,8 +47,6 @@ public class MainActivity extends AppCompatActivity {
     private Button deactivate;
     private ListView chat_list;
 
-    int count;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,7 +72,8 @@ public class MainActivity extends AppCompatActivity {
         if (LocationTrackerService.isInstanceCreated()) {
             activate.setEnabled(false);
             disp_ints.setEnabled(false);
-            dislayChatGroups();
+            //dislayChatGroups();
+            //registerOnClick();
             // Make chat list visible
         } else {
             deactivate.setEnabled(false);
@@ -104,6 +104,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         this.registerReceiver(notificationReceiver, new IntentFilter("ChatUpdate"));
+        if (chatAdaptor != null) {
+            chatAdaptor.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -134,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
         if (PackageManager.PERMISSION_GRANTED == permissionCheck) {
             chat_list.setEnabled(true);
             chat_list.setVisibility(View.VISIBLE);
+            registerOnClick();
             disp_ints.setEnabled(false);
             activate.setEnabled(false);
             deactivate.setEnabled(true);
@@ -195,6 +199,18 @@ public class MainActivity extends AppCompatActivity {
         //chatGroups = GlobalVars.getChatGroups();
         chatAdaptor = new ChatGroupAdaptor(this, R.layout.group_item, chatGroups);
         chat_list.setAdapter(chatAdaptor);
+    }
+
+    private void registerOnClick() {
+        chat_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view_clicked, int position, long id) {
+                ChatGroup group = chatGroups.get(position);
+                Intent intent = new Intent(MainActivity.this, ChatGroupActivity.class);
+                intent.putExtra("ChatId", group.getChatId());
+                startActivity(intent);
+            }
+        });
     }
 }
 

@@ -21,14 +21,17 @@ import java.util.List;
 public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>> {
     //private LocationApi locationService = null;
     private String userID = null;
+    private String email = null;
     private Context context = null;
     private String token = null;
     private List<String> interests = null;
     private ChatGroupList chatGroupList = null;
     private static final String TAG = "AsyncLocUpdate";
 
-    public AsyncUpdateLocation(String userID, Context context, String token, List<String> interests, List<ChatGroup> chatGroups) {
+    public AsyncUpdateLocation(String userID, String email, Context context, String token,
+                               List<String> interests, List<ChatGroup> chatGroups) {
         this.userID = userID;
+        this.email = email;
         this.context = context;
         this.token = token;
         this.interests = interests;
@@ -72,7 +75,7 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>
         ChatGroupList chatGroupList = null;
         try {
             // locationService.updateLocation(userID, params[0], params[1]).execute();
-            chatGroupList = locationService.updateLocation(userID, params[0], params[1], interests, token, chatGroupList).execute();
+            chatGroupList = locationService.updateLocation(userID, email, params[0], params[1], interests, token, chatGroupList).execute();
             Log.d(TAG, "Update location");
         } catch (IOException e) {
             Log.d(TAG, "IOException when trying to update location");

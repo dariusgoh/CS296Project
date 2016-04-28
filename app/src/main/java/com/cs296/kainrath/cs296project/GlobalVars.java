@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Pair;
 import android.widget.ListView;
 
 import com.cs296.kainrath.cs296project.backend.locationApi.LocationApi;
@@ -27,7 +28,9 @@ public class GlobalVars extends Application {
     public static UserApi userApi = null;
     public static LocationApi locationApi = null;
 
-    public static List<ChatGroup> chatGroups = new ArrayList<ChatGroup>();
+    public static Map<Integer, List<Pair<String, String>>> chatMessageMap;
+    public static List<ChatGroup> chatGroups = new ArrayList<>();
+
     private static User user = null;
     private static boolean failed = false;
 
@@ -59,27 +62,69 @@ public class GlobalVars extends Application {
 
     public static void setFailed(boolean result) { failed = result; }
 
-    public static void removeFromGroup(int chatId, String userId) {
+    public static List<Pair<String, String>> getChatMessageLog(int chatId) {
+        if (chatMessageMap == null) {
+            chatMessageMap = new TreeMap<>();
+        }
+        if (chatMessageMap.containsKey(chatId)) {
+            return chatMessageMap.get(chatId);
+        } else {
+            List<Pair<String, String>> chatLog = new ArrayList<>();
+            chatMessageMap.put(chatId, chatLog);
+            return chatLog;
+        }
+    }
+
+    public static void addMessage(int chatId, String email, String message) {
+        Log.d(TAG, "Received new message from " + email + " for chat " + chatId + ", " + message);
+        if (chatMessageMap == null) {
+            Log.d(TAG, "chatMessageMap is null, creating map");
+            chatMessageMap = new TreeMap<>();
+        }
+        List<Pair<String, String>> chatMessageList;
+        if (!chatMessageMap.containsKey(chatId)) {
+            Log.d(TAG, "Creating new list for chat group " + chatId);
+            chatMessageList = new ArrayList<>();
+            chatMessageMap.put(chatId, chatMessageList);
+        } else {
+            Log.d(TAG, "Retrieved chat log for chat group + " + chatId);
+            chatMessageList = chatMessageMap.get(chatId);
+        }
+        Pair<String, String> pair;
+        int chatMsgSize = chatMessageList.size();
+        if (chatMsgSize > 0 && chatMessageList.get(chatMsgSize - 1).first.equals(email)) {
+            pair = chatMessageList.get(chatMsgSize - 1);
+            String new_msg = pair.second + "\n" + message;
+            chatMessageList.remove(chatMsgSize - 1);
+            pair = new Pair<>(email, new_msg);
+            chatMessageList.add(pair);
+        } else {
+            pair = new Pair<>(email, message);
+            chatMessageList.add(pair);
+        }
+    }
+
+    public static void removeFromGroup(int chatId, String email) {
         for (ChatGroup g : chatGroups) {
             if (g.getChatId() == chatId) {
-                List<String> userIds = g.getUserIds();
-                g.remove(userId);
-                g.setUserIds(userIds);
+                List<String> emails = g.getEmails();
+                emails.remove(email);
+                g.setEmails(emails);
                 g.setGroupSize(g.getGroupSize() - 1);
-                Log.d(TAG, "removing " + userId + " from chatgroup " + chatId + ", new size " + g.getGroupSize());
+                Log.d(TAG, "removing " + email + " from chatgroup " + chatId + ", new size " + g.getGroupSize());
                 return;
             }
         }
     }
 
-    public static void addToGroup(int chatId, String userId) {
+    public static void addToGroup(int chatId, String email) {
         for (ChatGroup g : chatGroups) {
             if (g.getChatId() == chatId) {
-                List<String> userIds = g.getUserIds();
-                userIds.add(userId);
-                g.setUserIds(userIds);
+                List<String> emails = g.getEmails();
+                emails.add(email);
+                g.setEmails(emails);
                 g.setGroupSize(g.getGroupSize() + 1);
-                Log.d(TAG, "adding " + userId + " to chatgroup " + chatId + ", new size " + g.getGroupSize());
+                Log.d(TAG, "adding " + email + " to chatgroup " + chatId + ", new size " + g.getGroupSize());
             }
         }
     }
@@ -88,11 +133,17 @@ public class GlobalVars extends Application {
         Log.d(TAG, "Adding chat groups");
         chatGroups.clear();
         chatGroups.addAll(groups);
+        // TODO: Clear message map of groups not in anymore
         Log.d(TAG, chatGroups.size() + " chat groups");
     }
 
     public static void emptyChatGroup() {
-        chatGroups.clear();
+        if (chatMessageMap != null) {
+            chatMessageMap.clear();
+        }
+        if (chatGroups != null) {
+            chatGroups.clear();
+        }
     }
 
     public static List<ChatGroup> getChatGroups() {
@@ -117,50 +168,5 @@ public class GlobalVars extends Application {
         }
         return instance;
     }
-    /*
-    public static String getNearbyUserString() {
-        if (nearby_users == null || nearby_users.isEmpty()) {
-            return "No Users Nearby";
-        }
-        String result = "";
-        for (User n_user : nearby_users) {
-            result += n_user.getEmail() + "\n";
-        }
-        return result;
-    }
-
-    public static List<User> getNearbyUsers() {
-        if (nearby_users == null) {
-            nearby_users = new ArrayList<>();
-        }
-        return nearby_users;
-    }
-
-    public static void setNearbyUsers(List<User> onearby_users) {
-        nearby_users = onearby_users;
-    }
-
-    public static void addNearbyUser(String id, String email, List<String> interests) {
-        User nearby_user = new User();
-        nearby_user.setId(id);
-        nearby_user.setEmail(email);
-        nearby_user.setInterests(interests);
-        addNearbyUser(nearby_user);
-    }
-
-    public static void addNearbyUser(User nearby_user) {
-        if (nearby_users == null) {
-            nearby_users = new ArrayList<User>();
-            nearby_users.add(nearby_user);
-            return;
-        }
-        for (int i = 0; i < nearby_users.size(); ++i) {
-            if (nearby_users.get(i).getId().equals(nearby_user.getId())) {
-                nearby_users.add(i, nearby_user);
-                nearby_users.remove(i + 1);
-                return;
-            }
-        }
-        nearby_users.add(nearby_user);
-    }*/
 }
+
