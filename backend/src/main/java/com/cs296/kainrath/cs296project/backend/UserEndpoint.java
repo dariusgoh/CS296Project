@@ -144,16 +144,35 @@ public class UserEndpoint {
             user.setToken(token);
             Set<String> interest_set = new TreeSet<String>();
             if (result.next()) { // User is in the database, get interests
+
+                // Make sure the user isn't in the chatgroup/chatuser table
+                // This would happen if user doesn't deactivate and app is killed
+                if (result.getString("Active").equals("Y")) {
+                    ResultSet chats = conn.createStatement().executeQuery("SELECT ChatId FROM ChatUsers WHERE UserId=\"" + user_id + "\"");
+                    if (chats.next()) {
+                        String chatString = "" + chats.getInt("ChatId");
+                        while (chats.next()) {
+                            chatString += "," + chats.getInt("ChatId");
+                        }
+                        LocationEndpoint locationEndpoint = new LocationEndpoint();
+                        locationEndpoint.deactivateUser(user_id, email, result.getDouble("Latitude"), result.getDouble("Longitude"), chatString);
+                    }
+                    conn.createStatement().executeUpdate("UPDATE UserInfo SET Active=\"N\" WHERE UserId=\"" + user_id + "\"");
+                }
+
+
                 ResultSet int_result = conn.createStatement().executeQuery("SELECT Interest FROM UserInterests WHERE UserId=\"" +
                         user_id + "\"");
                 while (int_result.next()) {
                     interest_set.add(int_result.getString("Interest"));
                 }
+
                 // If the token is new, update the database
                 if (!token.equals(result.getString("Token"))) {
                     conn.createStatement().executeUpdate("UPDATE UserInfo SET Token=\"" + token + "\" WHERE UserId=\""
                             + user_id + "\"");
                 }
+
 
 
             } else { // New user, not in the database

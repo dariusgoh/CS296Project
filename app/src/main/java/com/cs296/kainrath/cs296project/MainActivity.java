@@ -6,6 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.LocationManager;
+import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -135,16 +138,36 @@ public class MainActivity extends AppCompatActivity {
     public void onClickActivate(View view) {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (PackageManager.PERMISSION_GRANTED == permissionCheck) {
-            chat_list.setEnabled(true);
-            chat_list.setVisibility(View.VISIBLE);
-            registerOnClick();
-            disp_ints.setEnabled(false);
-            activate.setEnabled(false);
-            deactivate.setEnabled(true);
-            Intent intent = new Intent(this, LocationTrackerService.class);
-            intent.putExtra(USER_ID, user.getId());
-            startService(intent);
-            dislayChatGroups();
+
+            // Make sure gps is enabled
+            Criteria trackerCriteria = new Criteria();
+            trackerCriteria.setAccuracy(Criteria.ACCURACY_FINE);
+            trackerCriteria.setAltitudeRequired(false);
+            trackerCriteria.setBearingRequired(false);
+            trackerCriteria.setCostAllowed(true);
+            trackerCriteria.setPowerRequirement(Criteria.NO_REQUIREMENT);
+            LocationManager locManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            String provider = locManager.getBestProvider(trackerCriteria, true);
+            if (provider != null) {
+                Log.d(TAG, "provider: " + provider);
+                chat_list.setEnabled(true);
+                chat_list.setVisibility(View.VISIBLE);
+                registerOnClick();
+                disp_ints.setEnabled(false);
+                activate.setEnabled(false);
+                deactivate.setEnabled(true);
+                Intent intent = new Intent(this, LocationTrackerService.class);
+                intent.putExtra("PROVIDER", provider);
+                intent.putExtra(USER_ID, user.getId());
+                startService(intent);
+                dislayChatGroups();
+            } else {
+                Toast.makeText(getBaseContext(), "Please enable GPS for this app",
+                        Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+
         } else {
             Toast.makeText(this, "Please enable location services for this app", Toast.LENGTH_LONG).show();
         }
