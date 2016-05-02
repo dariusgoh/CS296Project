@@ -39,16 +39,13 @@ import javax.inject.Named;
 )
 public class LocationEndpoint {
 
-    //private static final int MYSQL_DUPLICATE_CODE = 1062;
     private static final Logger logger = Logger.getLogger(LocationEndpoint.class.getName());
     private static final String url = "jdbc:google:mysql://cs296-backend:cs296-app-location-data/UserLocation?user=root";
     private static final String API_KEY = "AIzaSyAJuwfy0EoirghnDaThupzrqNTDVxsm650";
 
+    // A user or chatgroup's radius
     private static final double DIST = 100;
-
-    // Pre-calculated values
     private static final double RAD_EARTH = 6371000; // In meters
-    private static final double ANG_DIST = DIST / RAD_EARTH;
 
     /**
      * This method gets the location of the user with the specified ID.  If the user is offline,
@@ -102,7 +99,7 @@ public class LocationEndpoint {
             return null;
         }
 
-        // Interests is comma separated, single String, not a list for some reason
+        // Interests is comma separated, single String, not a list of Strings for some reason
         String ints = interests.get(0);
         String[] split_interests = ints.split(",");
         interests.clear();
@@ -110,22 +107,23 @@ public class LocationEndpoint {
             interests.add(s);
         }
 
+        // If chatGroupList is empty, the user just activated
+        // If chatGroupList is not empty, the user's location updated but the user was already "active"
         boolean firstUpdate = (chatGroupList == null) || (chatGroupList.getChatGroups() == null) || (chatGroupList.getChatGroups().isEmpty());
         Location userLocation = new Location(user_id, lat, lon);
         Connection conn;
-        double oldLat = -200, oldLong = -200;
-        try {
+        double oldLat = -200, oldLong = -200; // Values will be changed if the user was already active
+        try { // Create a connection to the database
             Class.forName("com.mysql.jdbc.GoogleDriver");
             conn = DriverManager.getConnection(url);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             return null;
         } catch (SQLException e) {
-            String error = e.getSQLState();
+            String error = e.getSQLState(); // This is here for debugging purposes (cloud debugger)
             return null;
         }
 
-        // UPDATE LOCATION IN THE DATABASE
         String updateLoc;
         if (firstUpdate) { // Just activated
             updateLoc = "UPDATE UserInfo SET Latitude=" + lat + ", Longitude=" + lon +
@@ -146,13 +144,15 @@ public class LocationEndpoint {
             updateLoc = "UPDATE UserInfo SET Latitude=" + lat + ", Longitude=" + lon +
                     " WHERE UserId=\"" + user_id + "\"";
         }
-        try {
+        try { // Update location in the database
             conn.createStatement().executeUpdate(updateLoc);
         } catch (SQLException e) {
             String error = e.getSQLState();
             return null;
         }
 
+        // Update current chat groups by changing the lat/long of the chatGroup.  If the user is now outside of the range of the
+        // ChatGroup, the user will leave the chatGroup and will notify the users through GCM.
         List<ChatGroup> currChatGroups;
         if (!firstUpdate) {
             currChatGroups = updateCurrentChatGroups(conn, chatGroupList.getChatGroups(), userLocation, oldLat, oldLong, email);
@@ -186,20 +186,21 @@ public class LocationEndpoint {
         currChatGroups.addAll(newNearbyChats);
 
         // Start a chat group for any interests that don't already have a chatgroup
+        // This can only happen if the user just activated (not on a location update)
         if (firstUpdate) {
             List<String> unmatchedInterests = new ArrayList<>();
             unmatchedInterests.addAll(interests);
-            for (ChatGroup chat : currChatGroups) {
+            for (ChatGroup chat : currChatGroups) { // Remove interests that are already covered by another chatGroup
                 unmatchedInterests.remove(chat.getInterest());
             }
-            if (!unmatchedInterests.isEmpty()) {
+            if (!unmatchedInterests.isEmpty()) { // Unmatched interests, start new chatGroup
                 currChatGroups.addAll(startNewChatGroups(conn, unmatchedInterests, lat, lon, token, user_id, email));
             }
         }
 
         ChatGroupList groupList = new ChatGroupList(currChatGroups);
 
-        try {
+        try { // Close connection
             conn.close();
         } catch (SQLException e) {
             String error = e.getSQLState();
@@ -232,7 +233,7 @@ public class LocationEndpoint {
             Class.forName("com.mysql.jdbc.GoogleDriver");
             conn = DriverManager.getConnection(url);
 
-            // GET CHATGROUP INFORMATION
+            // Get ChatGroup information
             String groupQuery = "SELECT * FROM ChatGroups WHERE ChatId=" + chatIds.get(0);
             for (int i = 1; i < chatIds.size(); ++i) {
                 groupQuery += " OR ChatId=" + chatIds.get(i);
@@ -244,8 +245,6 @@ public class LocationEndpoint {
                         groupSet.getInt("GroupSize"), groupSet.getDouble("Latitude"), groupSet.getDouble("Longitude"));
                 currChatGroups.add(group);
             }
-
-
 
             // Make user "Offline"
             String offlineUpdate = "UPDATE UserInfo SET Active=\"N\" WHERE UserId=\"" + user_id + "\"";
@@ -272,7 +271,7 @@ public class LocationEndpoint {
                         leaveChatGroup(conn, user_id, email, group);
                     }
                 }
-                if (removed) {
+                if (removed) { // Destroy the chatGroups where the user is the only member
                     Statement stmt = conn.createStatement();
                     stmt.addBatch(destroyChatGroupUpdate);
                     stmt.addBatch(destroyChatUserUpdate);
@@ -365,10 +364,11 @@ public class LocationEndpoint {
     }
 
     private List<ChatGroup> findNewChatGroupsInRadius(Connection conn, Location userLoc, List<ChatGroup> currGroups) {
+        double ang_dist = DIST / RAD_EARTH;
         double latitude = userLoc.getLatitude();
         double longitude = userLoc.getLongitude();
-        double ang_cos = Math.cos(ANG_DIST);
-        double ang_sin = Math.sin(ANG_DIST);
+        double ang_cos = Math.cos(ang_dist);
+        double ang_sin = Math.sin(ang_dist);
         double sin_lat1 = Math.sin(latitude * Math.PI / 180); // Need radians
         double cos_lat1 = Math.cos(latitude * Math.PI / 180); // Need radians    1 = Cos(0)
         double dLat = Math.abs(Math.asin(sin_lat1 * ang_cos + cos_lat1 * ang_sin * 1) * 180 / Math.PI - latitude);
@@ -383,7 +383,7 @@ public class LocationEndpoint {
         List<ChatGroup> nearbyChatGroups = new ArrayList<>();
         ChatGroup nearbyGroup; // Placed here for debug purposes
         try {
-            // GET CHATGROUPS NEAR USER
+            // Get chatGroups near user
             String groupQuery = "SELECT * FROM ChatGroups WHERE Latitude BETWEEN " + lat2 + " AND " + lat1 +
                     " AND Longitude BETWEEN " + long2 + " AND " + long1;
             if (currGroups != null) {

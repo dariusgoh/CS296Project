@@ -17,7 +17,6 @@ import java.util.List;
  * Created by kainrath on 4/5/16.
  */
 public class AsyncDeactivateUser extends AsyncTask<String, Void, Void> {
-    //private LocationApi locationService = null;
     private double lat, lon;
     private String TAG = "AsyncDeact";
     private String chatIds = "";

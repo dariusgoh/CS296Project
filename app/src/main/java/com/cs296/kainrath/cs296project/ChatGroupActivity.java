@@ -29,11 +29,9 @@ public class ChatGroupActivity extends AppCompatActivity {
     public List<Pair<String, String>> chatLog;
     private int chatId;
     private String email;
-    private String userId;
 
     private ListView messageList;
     private EditText messageToSend;
-    //private Button sendButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +45,6 @@ public class ChatGroupActivity extends AppCompatActivity {
             startActivity(new Intent(this, MainActivity.class));
         }
         email = GlobalVars.getUser().getEmail();
-        userId = GlobalVars.getUser().getId();
 
         messageList = (ListView) findViewById(R.id.chat_message_list);
         messageToSend = (EditText) findViewById(R.id.message_to_send);
@@ -84,14 +81,15 @@ public class ChatGroupActivity extends AppCompatActivity {
         this.registerReceiver(messageReceiver, new IntentFilter("MessageUpdate"));
     }
 
+    // Received new GCM message
     private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
         private String TAG = "ChatGroupBroadCastRec";
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "Recieved new message broadcast");
             final int chatIdIncoming = intent.getIntExtra("ChatId", -1);
-            if (chatIdIncoming == chatId) {
-                // UPDATING UI MUST BE DONE ON MAIN THREAD
+            if (chatIdIncoming == chatId) { // Update UI if the message was for this chatGroup, else ignore
+                // Updating UI must be done on the main thread
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

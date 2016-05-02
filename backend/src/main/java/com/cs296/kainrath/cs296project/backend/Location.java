@@ -58,6 +58,7 @@ public class Location {
         return 12742000 * Math.asin(Math.sqrt(distance)); // Earths radius in m (6371000) * 2 precomputed
     }
 
+    // For comparing the distance between a User and a ChatGroup
     public double distanceTo(double lat, double lon) {
         double deg2rad = 0.017453292519943295;  // PI / 180 precomputed to save time
         double distance = 0.5 - Math.cos((lat - this.latitude) * deg2rad)/2 +

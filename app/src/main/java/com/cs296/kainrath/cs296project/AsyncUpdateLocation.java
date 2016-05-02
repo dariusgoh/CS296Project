@@ -19,7 +19,6 @@ import java.util.List;
  * Created by Darius on 4/5/2016.
  */
 public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>> {
-    //private LocationApi locationService = null;
     private String userID = null;
     private String email = null;
     private Context context = null;
@@ -53,20 +52,6 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>
             LocationApi.Builder builder = new LocationApi.Builder(AndroidHttp.newCompatibleTransport(),
                     new AndroidJsonFactory(), null)
                     .setRootUrl("https://cs296-backend.appspot.com/_ah/api/");
-            // options for running against local devappserver
-            // - 10.0.2.2 is localhost's IP address in Android Emulator
-            // - turn off compression when running against local devappserver
-            // for local testing
-                    /*
-                    .setRootUrl("http://10.0.2.2:8080/_ah/api/")
-                    .setGoogleClientRequestInitializer(new GoogleClientRequestInitializer() {
-                        @Override
-                        public void initialize(AbstractGoogleClientRequest<?> abstractGoogleClientRequest) throws IOException {
-                            abstractGoogleClientRequest.setDisableGZipContent(true);
-                        }
-                    });*/
-
-            // End options for devappserver
 
             locationService = builder.build();
             Log.d(TAG, "locationService generated");
@@ -74,7 +59,6 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>
         }
         ChatGroupList chatGroupList = null;
         try {
-            // locationService.updateLocation(userID, params[0], params[1]).execute();
             chatGroupList = locationService.updateLocation(userID, email, params[0], params[1], interests, token, chatGroupList).execute();
             Log.d(TAG, "Update location");
         } catch (IOException e) {

@@ -6,6 +6,8 @@ import java.util.List;
 /**
  * Created by kainrath on 4/20/16.
  */
+// Class simple for sending List<ChatGroup> to the app from this endpoint
+// Google endpoints does not allow returning List<> structure.
 public class ChatGroupList {
     private List<ChatGroup> chatGroups;
 

@@ -247,7 +247,7 @@ public class UserEndpoint {
         boolean modAdd = false;
         boolean modRem = false;
         List<String> addAll = new ArrayList<>();
-        if (!add.isEmpty() && !remove.equals("")) {
+        if (!add.isEmpty() && !add.equals("")) {
             String[] new_ints_arr = add.split(",,,");
             for (String s : new_ints_arr) {
                 addAll.add(s);

@@ -25,9 +25,11 @@ import java.util.TreeMap;
 public class GlobalVars extends Application {
     private static String TAG = "GlobalVars";
 
+    // For async tasks
     public static UserApi userApi = null;
     public static LocationApi locationApi = null;
 
+    // For displaying chatgroups and messages
     public static Map<Integer, List<Pair<String, String>>> chatMessageMap;
     public static List<ChatGroup> chatGroups = new ArrayList<>();
 
@@ -44,6 +46,14 @@ public class GlobalVars extends Application {
     public static void setLatLong(double latitude, double longitude) {
         latit = latitude;
         longit = longitude;
+    }
+
+    public static boolean hasInterests() {
+        if (user.getInterests() == null) {
+            return false;
+        } else {
+            return !user.getInterests().isEmpty();
+        }
     }
 
     public static double getLat() {
