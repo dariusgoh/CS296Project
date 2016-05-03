@@ -112,7 +112,8 @@ public class LocationTrackerService extends Service {
         provider = intent.getStringExtra("PROVIDER");
         super.onStartCommand(intent, flags, startId);
         try {
-            locationManager.requestLocationUpdates(provider, 6000, 20, locListener);
+            locationManager.requestLocationUpdates(provider, 6000, 10, locListener);
+
             Log.d(TAG, "Requested location updates");
         } catch (SecurityException e) {
             Log.d(TAG, "Security exception when creating location tracking service");

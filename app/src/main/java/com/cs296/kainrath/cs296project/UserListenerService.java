@@ -27,18 +27,19 @@ public class UserListenerService extends GcmListenerService {
 
         String action = data.getString("Action");
         int chatId = Integer.parseInt(data.getString("ChatId"));
-        String email = data.getString("Email");
-        if (action.equals("LeavingGroup")) {
+        String recvd_email = data.getString("Email");
+        String user_email = GlobalVars.getUser().getEmail();
+        if (action.equals("LeavingGroup") && !recvd_email.equals(user_email)) {
             Log.d(TAG, "A user is leaving a group");
-            GlobalVars.removeFromGroup(chatId, email);
+            GlobalVars.removeFromGroup(chatId, recvd_email);
             this.sendBroadcast(new Intent("ChatUpdate")); // send broadcast to MainActivity list
-        } else if (action.equals("JoiningGroup")) {
+        } else if (action.equals("JoiningGroup") && !recvd_email.equals(user_email)) {
             Log.d(TAG, "A user is joining a group");
-            GlobalVars.addToGroup(chatId, email);
+            GlobalVars.addToGroup(chatId, recvd_email);
             this.sendBroadcast(new Intent("ChatUpdate")); // Send broadcast to MainActivity list
         } else if (action.equals("NewMessage")) {
             Log.d(TAG, "Received a message from a chat group");
-            GlobalVars.addMessage(chatId, email, data.getString("Message"));
+            GlobalVars.addMessage(chatId, recvd_email, data.getString("Message"));
             Intent intent = new Intent("MessageUpdate");
             intent.putExtra("ChatId", chatId);
             this.sendBroadcast(intent);                   // Send broadcast to ChatGroupActivity list

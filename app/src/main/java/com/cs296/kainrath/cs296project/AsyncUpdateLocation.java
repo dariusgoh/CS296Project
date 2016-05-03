@@ -24,7 +24,7 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>
     private Context context = null;
     private String token = null;
     private List<String> interests = null;
-    private ChatGroupList chatGroupList = null;
+    private String chatIdString = " ";
     private static final String TAG = "AsyncLocUpdate";
 
     public AsyncUpdateLocation(String userID, String email, Context context, String token,
@@ -34,13 +34,17 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>
         this.context = context;
         this.token = token;
         this.interests = interests;
-        chatGroupList = new ChatGroupList();
-        chatGroupList.setChatGroups(chatGroups);
+        if (chatGroups != null && !chatGroups.isEmpty()) {
+            chatIdString = "" + chatGroups.get(0).getChatId();
+            for (int i = 1; i < chatGroups.size(); ++i) {
+                chatIdString += "," + chatGroups.get(i).getChatId();
+            }
+        }
         Log.d(TAG, "userId: " + userID + ", token: " + token);
         if (chatGroups == null || chatGroups.isEmpty()) {
             Log.d(TAG, "chatGroups is null or empty");
         } else {
-            Log.d(TAG, "chatGroups is not null nor empty");
+            Log.d(TAG, "" + chatIdString);
         }
     }
 
@@ -59,7 +63,7 @@ public class AsyncUpdateLocation extends AsyncTask<Double, Void, List<ChatGroup>
         }
         ChatGroupList chatGroupList = null;
         try {
-            chatGroupList = locationService.updateLocation(userID, email, params[0], params[1], interests, token, chatGroupList).execute();
+            chatGroupList = locationService.updateLocation(userID, email, params[0], params[1], interests, token, chatIdString).execute();
             Log.d(TAG, "Update location");
         } catch (IOException e) {
             Log.d(TAG, "IOException when trying to update location");

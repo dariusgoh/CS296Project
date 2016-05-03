@@ -143,7 +143,6 @@ public class GlobalVars extends Application {
         Log.d(TAG, "Adding chat groups");
         chatGroups.clear();
         chatGroups.addAll(groups);
-        // TODO: Clear message map of groups not in anymore
         Log.d(TAG, chatGroups.size() + " chat groups");
     }
 
