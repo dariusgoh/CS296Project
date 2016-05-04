@@ -19,6 +19,8 @@ public class LocationTrackerService extends Service {
     private static final String TAG = "LocTrackServ";
     private static final String USER_ID = "USER_ID";
     private String user_id;
+    private String email;
+    private String provider;
     //private Activity activity;
 
     private LocationManager locationManager;
@@ -46,7 +48,7 @@ public class LocationTrackerService extends Service {
             // send information to the database
             Log.d(TAG, "Updating location");
             GlobalVars.setLatLong(location.getLatitude(), location.getLongitude());
-            new AsyncUpdateLocation(user_id, appContext, GlobalVars.getUser().getToken(),
+            new AsyncUpdateLocation(user_id, email, appContext, GlobalVars.getUser().getToken(),
                     GlobalVars.getUser().getInterests(), GlobalVars.getChatGroups()).execute(location.getLatitude(), location.getLongitude());
         }
 
@@ -67,17 +69,17 @@ public class LocationTrackerService extends Service {
         @Override
         public void onProviderEnabled(String provider) {
             Log.d(TAG, "Provider has been enabled");
-            Toast.makeText(getBaseContext(), "GPS is on! ",
-                    Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onProviderDisabled(String provider) {
             Log.d(TAG, "Provider has been disabled");
-            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivity(intent);
-            Toast.makeText(getBaseContext(), "turn GPS on! ",
+            Toast.makeText(getBaseContext(), "Please enable GPS for this app",
                     Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+
         }
     }
 
@@ -90,7 +92,7 @@ public class LocationTrackerService extends Service {
             try {
                 locationManager.removeUpdates(locListener);
                 Log.d(TAG, "Starting AsyncDeactivateUser");
-                new AsyncDeactivateUser(GlobalVars.getLat(), GlobalVars.getLong()).execute(user_id);
+                new AsyncDeactivateUser(GlobalVars.getLat(), GlobalVars.getLong()).execute(user_id, email);
             } catch (SecurityException e) {
                 // Already checked for permissions in MainActivity
             }
@@ -106,7 +108,16 @@ public class LocationTrackerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "starting location tracking service");
         user_id = intent.getStringExtra(USER_ID);
+        email = GlobalVars.getUser().getEmail();
+        provider = intent.getStringExtra("PROVIDER");
         super.onStartCommand(intent, flags, startId);
+        try {
+            locationManager.requestLocationUpdates(provider, 30000, 25, locListener);
+            Log.d(TAG, "Requested location updates");
+        } catch (SecurityException e) {
+            Log.d(TAG, "Security exception when creating location tracking service");
+            // Already checked for permissions in MainActivity
+        }
         return START_STICKY;
     }
 
@@ -118,13 +129,5 @@ public class LocationTrackerService extends Service {
         instance = this;
         locListener = new UserLocationListener(this.getApplicationContext());
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        try {
-            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30000, 25, locListener);
-            Log.d(TAG, "Requested location updates");
-        } catch (SecurityException e) {
-            Log.d(TAG, "Security exception when creating location tracking service");
-            // Already checked for permissions in MainActivity
-        }
     }
 }

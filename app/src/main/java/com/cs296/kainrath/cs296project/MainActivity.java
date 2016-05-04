@@ -6,6 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.LocationManager;
+import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +19,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -46,8 +50,6 @@ public class MainActivity extends AppCompatActivity {
     private Button deactivate;
     private ListView chat_list;
 
-    int count;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,7 +75,8 @@ public class MainActivity extends AppCompatActivity {
         if (LocationTrackerService.isInstanceCreated()) {
             activate.setEnabled(false);
             disp_ints.setEnabled(false);
-            dislayChatGroups();
+            //dislayChatGroups();
+            //registerOnClick();
             // Make chat list visible
         } else {
             deactivate.setEnabled(false);
@@ -104,6 +107,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         this.registerReceiver(notificationReceiver, new IntentFilter("ChatUpdate"));
+        if (chatAdaptor != null) {
+            chatAdaptor.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -132,15 +138,36 @@ public class MainActivity extends AppCompatActivity {
     public void onClickActivate(View view) {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (PackageManager.PERMISSION_GRANTED == permissionCheck) {
-            chat_list.setEnabled(true);
-            chat_list.setVisibility(View.VISIBLE);
-            disp_ints.setEnabled(false);
-            activate.setEnabled(false);
-            deactivate.setEnabled(true);
-            Intent intent = new Intent(this, LocationTrackerService.class);
-            intent.putExtra(USER_ID, user.getId());
-            startService(intent);
-            dislayChatGroups();
+
+            // Make sure gps is enabled
+            Criteria trackerCriteria = new Criteria();
+            trackerCriteria.setAccuracy(Criteria.ACCURACY_FINE);
+            trackerCriteria.setAltitudeRequired(false);
+            trackerCriteria.setBearingRequired(false);
+            trackerCriteria.setCostAllowed(true);
+            trackerCriteria.setPowerRequirement(Criteria.NO_REQUIREMENT);
+            LocationManager locManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            String provider = locManager.getBestProvider(trackerCriteria, true);
+            if (provider != null) {
+                Log.d(TAG, "provider: " + provider);
+                chat_list.setEnabled(true);
+                chat_list.setVisibility(View.VISIBLE);
+                registerOnClick();
+                disp_ints.setEnabled(false);
+                activate.setEnabled(false);
+                deactivate.setEnabled(true);
+                Intent intent = new Intent(this, LocationTrackerService.class);
+                intent.putExtra("PROVIDER", provider);
+                intent.putExtra(USER_ID, user.getId());
+                startService(intent);
+                dislayChatGroups();
+            } else {
+                Toast.makeText(getBaseContext(), "Please enable GPS for this app",
+                        Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+
         } else {
             Toast.makeText(this, "Please enable location services for this app", Toast.LENGTH_LONG).show();
         }
@@ -195,6 +222,18 @@ public class MainActivity extends AppCompatActivity {
         //chatGroups = GlobalVars.getChatGroups();
         chatAdaptor = new ChatGroupAdaptor(this, R.layout.group_item, chatGroups);
         chat_list.setAdapter(chatAdaptor);
+    }
+
+    private void registerOnClick() {
+        chat_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view_clicked, int position, long id) {
+                ChatGroup group = chatGroups.get(position);
+                Intent intent = new Intent(MainActivity.this, ChatGroupActivity.class);
+                intent.putExtra("ChatId", group.getChatId());
+                startActivity(intent);
+            }
+        });
     }
 }
 

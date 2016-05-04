@@ -25,29 +25,28 @@ public class UserListenerService extends GcmListenerService {
             return;
         }
 
+        // TODO: RETRIEVE AND STORE EMAIL
         String action = data.getString("Action");
+        int chatId = Integer.parseInt(data.getString("ChatId"));
+        String email = data.getString("Email");
         if (action.equals("LeavingGroup")) {
             Log.d(TAG, "A user is leaving a group");
-            int chatId = Integer.parseInt(data.getString("ChatId"));
-            GlobalVars.removeFromGroup(chatId, data.getString("UserId"));
+            GlobalVars.removeFromGroup(chatId, email);
+            this.sendBroadcast(new Intent("ChatUpdate"));
         } else if (action.equals("JoiningGroup")) {
             Log.d(TAG, "A user is joining a group");
-            int chatId = Integer.parseInt(data.getString("ChatId"));
-            GlobalVars.addToGroup(chatId, data.getString("UserId"));
+            GlobalVars.addToGroup(chatId, email);
+            this.sendBroadcast(new Intent("ChatUpdate"));
         } else if (action.equals("NewMessage")) {
             Log.d(TAG, "Received a message from a chat group");
-            newMessage(from, data);
+            GlobalVars.addMessage(chatId, email, data.getString("Message"));
+            Intent intent = new Intent("MessageUpdate");
+            intent.putExtra("ChatId", chatId);
+            this.sendBroadcast(intent);
         } else {
             Log.d(TAG, "Received unknown gcm message");
             return;
         }
-        this.sendBroadcast(new Intent("ChatUpdate"));
-    }
 
-    private void newMessage(String from, Bundle data) {
-        String user = data.getString("UserId");
-        int chatId = Integer.parseInt(data.getString("ChatId"));
-        String message = data.getString("Message");
-        // DO SOMETHING WITH MESSAGE
     }
 }

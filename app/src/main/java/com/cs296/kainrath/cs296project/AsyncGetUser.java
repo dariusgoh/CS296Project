@@ -13,9 +13,9 @@ import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 import java.io.IOException;
 
 
-/**
- * Created by kainrath on 3/28/16.
- */
+// DON'T USE THIS CLASS ANYMORE!!!
+/*
+
 public class AsyncGetUser extends AsyncTask<String, Void, User> {
     private Activity activity = null;
 
@@ -41,7 +41,7 @@ public class AsyncGetUser extends AsyncTask<String, Void, User> {
                         public void initialize(AbstractGoogleClientRequest<?> abstractGoogleClientRequest) throws IOException {
                             abstractGoogleClientRequest.setDisableGZipContent(true);
                         }
-                    });*/
+                    });
 
             // End options for devappserver
 
@@ -73,3 +73,4 @@ public class AsyncGetUser extends AsyncTask<String, Void, User> {
         }
     }
 }
+*/

@@ -7,7 +7,11 @@ import java.util.List;
  * Created by kainrath on 4/20/16.
  */
 public class ChatGroupList {
-    List<ChatGroup> chatGroups;
+    private List<ChatGroup> chatGroups;
+
+    public ChatGroupList(List<ChatGroup> chatGroups) {
+        this.chatGroups = chatGroups;
+    }
 
     public ChatGroupList() {
         chatGroups = new ArrayList<ChatGroup>();
