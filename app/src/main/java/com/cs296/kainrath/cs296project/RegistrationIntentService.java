@@ -17,8 +17,10 @@ import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 import java.io.IOException;
 
 /**
- * An {@link IntentService} subclass for handling asynchronous task requests in
- * a service on a separate handler thread.
+ * Service that runs in a separate thread from the UI thread for getting a GCM token,
+ * storing it in the database while also retrieving user information.
+ * Will be called when a user signs in or when a GCM token goes stale and needs to
+ * be regenerated.
  */
 public class RegistrationIntentService extends IntentService {
 

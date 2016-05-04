@@ -44,7 +44,7 @@ public class LocationEndpoint {
     private static final String API_KEY = "AIzaSyAJuwfy0EoirghnDaThupzrqNTDVxsm650";
 
     // A user or chatgroup's radius
-    private static final double DIST = 100;
+    private static final double DIST = 25;
     private static final double RAD_EARTH = 6371000; // In meters
 
     /**
@@ -174,8 +174,9 @@ public class LocationEndpoint {
         // Get nearby chat groups
         List<ChatGroup> nearbyChats = findChatGroupsInRadius(conn, userLocation);
 
+
         // Compare interests to see if they match with any new nearby chats
-        if (!nearbyChats.isEmpty()) {
+        if (nearbyChats != null && !nearbyChats.isEmpty()) {
             int nearbyChatSize = nearbyChats.size(); // For debugging purposes
             int matchingSize = 0; // For debugging purposes
             String interest_debug = "";
@@ -341,7 +342,7 @@ public class LocationEndpoint {
             String chatUserUpdate = "INSERT INTO ChatUsers (ChatId, UserId, Token, Email) VALUES (" + chat.getChatId() +", " +
                     "\"" + userLoc.getUser_id() + "\", \"" + token + "\", \"" + email + "\")";
             String chatGroupUpdate = "UPDATE ChatGroups SET Latitude=" + chat.getLatitude() + ", Longitude=" + chat.getLongitude() +
-                    ", GroupSize=" + chat.getGroupSize() + " WHERE ChatId=" + chat.getChatId();
+                    ", GroupSize=GroupSize + 1 WHERE ChatId=" + chat.getChatId();
             Statement stmt = conn.createStatement();
             stmt.addBatch(chatGroupUpdate);
             stmt.addBatch(chatUserUpdate);
@@ -433,7 +434,7 @@ public class LocationEndpoint {
             String deleteChatUser = "DELETE FROM ChatUsers WHERE UserId=\"" + user_id + "\" AND ChatId=" +
                     group.getChatId();
             String updateChatGroup = "UPDATE ChatGroups SET Latitude=" + group.getLatitude() + ", Longitude=" + group.getLongitude() +
-                    ", GroupSize=" + group.getGroupSize() + " WHERE ChatId=" + group.getChatId();
+                    ", GroupSize=GroupSize - 1 WHERE ChatId=" + group.getChatId();
             stmt.addBatch(deleteChatUser);
             stmt.addBatch(updateChatGroup);
             stmt.executeBatch();

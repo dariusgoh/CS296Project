@@ -1,6 +1,5 @@
 package com.cs296.kainrath.cs296project;
 
-import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +12,12 @@ import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
+
+/* Service that tracks the users location
+ * The service runs on the main thread but spawns
+ * a new thread when the location changes in order
+ * to connect to the server
+ */
 
 public class LocationTrackerService extends Service {
 
@@ -112,7 +117,7 @@ public class LocationTrackerService extends Service {
         provider = intent.getStringExtra("PROVIDER");
         super.onStartCommand(intent, flags, startId);
         try {
-            locationManager.requestLocationUpdates(provider, 6000, 10, locListener);
+            locationManager.requestLocationUpdates(provider, 3000, 5, locListener);
 
             Log.d(TAG, "Requested location updates");
         } catch (SecurityException e) {
