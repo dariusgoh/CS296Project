@@ -1,4 +1,4 @@
-#Synopsis
+##LocChat
 
 A location based app where nearby users can talk to each other based on common interests.
 
