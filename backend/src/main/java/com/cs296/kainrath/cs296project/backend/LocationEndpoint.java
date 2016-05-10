@@ -161,16 +161,6 @@ public class LocationEndpoint {
             return null;
         }
 
-        // Update current chat groups by changing the lat/long of the chatGroup.  If the user is now outside of the range of the
-        // ChatGroup, the user will leave the chatGroup and will notify the users through GCM.
-        /*
-        List<ChatGroup> currChatGroups;
-        if (!firstUpdate) {
-            currChatGroups = updateCurrentChatGroups(conn, currChatIds, userLocation, oldLat, oldLong, email);
-        } else {
-            currChatGroups = new ArrayList<>();
-        }*/
-
         // Get nearby chat groups
         List<ChatGroup> nearbyChats = findChatGroupsInRadius(conn, userLocation);
 
