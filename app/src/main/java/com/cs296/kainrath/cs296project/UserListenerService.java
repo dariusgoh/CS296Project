@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+/*
+ * Service that receives the GCM notifications
+ */
 public class UserListenerService extends GcmListenerService {
     private static String TAG = "GCM Listener Service";
 

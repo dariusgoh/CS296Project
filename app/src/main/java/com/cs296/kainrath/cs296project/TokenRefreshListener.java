@@ -6,6 +6,7 @@ import android.os.IBinder;
 
 import com.google.android.gms.iid.InstanceIDListenerService;
 
+// Service that is called when the GCM token needs to be refreshed
 public class TokenRefreshListener extends InstanceIDListenerService {
 
     // Regenerate token if needed
