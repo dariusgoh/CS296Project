@@ -72,9 +72,11 @@ public class MainActivity extends AppCompatActivity {
         disp_ints = (Button) findViewById(R.id.button_display_interests);
         chat_list = (ListView) findViewById(R.id.chat_list);
 
+        boolean has_interests = GlobalVars.hasInterests();
+
         if (LocationTrackerService.isInstanceCreated()) {
             activate.setEnabled(false);
-            disp_ints.setEnabled(false);
+            disp_ints.setEnabled(false); // Don't allow user to modify interests while activated
             //dislayChatGroups();
             //registerOnClick();
             // Make chat list visible
@@ -82,14 +84,18 @@ public class MainActivity extends AppCompatActivity {
             deactivate.setEnabled(false);
             // Make chat list invisible
         }
+        if (!has_interests) { // Don't allow user to "activate" if they don't have interests
+            activate.setEnabled(false);
+        }
     }
 
+    // For updating list if user joined/left a group
     private BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
         private String TAG = "BroadCastRec";
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "Recieved broadcast");
-            // UPDATING UI MUST BE DONE ON MAIN THREAD
+            // Updating UI must be done on Main thread
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -106,8 +112,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Activate broadcast receiver
         this.registerReceiver(notificationReceiver, new IntentFilter("ChatUpdate"));
-        if (chatAdaptor != null) {
+        if (chatAdaptor != null) { // Possibility that chatGroups were updated while in a different activity
             chatAdaptor.notifyDataSetChanged();
         }
     }
@@ -115,9 +122,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        // Pause broadcast receiver
         this.unregisterReceiver(notificationReceiver);
     }
 
+    // For accessing Logout button
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -204,6 +213,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void logout() {
+        if (LocationTrackerService.isInstanceCreated()) {
+            Toast.makeText(this, "Please Deactivate before logging out", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Log.d(TAG, "starting logout");
         GlobalVars.setUser(null);
         GlobalVars.emptyChatGroup();
@@ -279,7 +292,6 @@ class ChatGroupAdaptor extends ArrayAdapter<ChatGroup> {
         TextView groupSize = (TextView) rowView.findViewById(R.id.group_size);
         String groupSizeText = chatGroups.get(position).getGroupSize() + " User(s)";
         groupSize.setText(groupSizeText);
-        // TextView newMessage = (TextView) rowView.findViewById(R.id.group_new_message);
         return rowView;
     }
 

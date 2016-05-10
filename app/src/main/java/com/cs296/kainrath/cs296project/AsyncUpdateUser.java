@@ -43,20 +43,6 @@ public class AsyncUpdateUser extends AsyncTask<String, Void, Void> {
             UserApi.Builder builder = new UserApi.Builder(AndroidHttp.newCompatibleTransport(),
                     new AndroidJsonFactory(), null)
                     .setRootUrl("https://cs296-backend.appspot.com/_ah/api/");
-            // options for running against local devappserver
-            // - 10.0.2.2 is localhost's IP address in Android Emulator
-            // - turn off compression when running against local devappserver
-            // for local testing
-                    /*
-                    .setRootUrl("http://10.0.2.2:8080/_ah/api/")
-                    .setGoogleClientRequestInitializer(new GoogleClientRequestInitializer() {
-                        @Override
-                        public void initialize(AbstractGoogleClientRequest<?> abstractGoogleClientRequest) throws IOException {
-                            abstractGoogleClientRequest.setDisableGZipContent(true);
-                        }
-                    });*/
-
-            // End options for devappserver
 
             userService = builder.build();
             Log.d(TAG, "userService has been generated");
@@ -69,7 +55,7 @@ public class AsyncUpdateUser extends AsyncTask<String, Void, Void> {
             userService.update(params[0], addAll, remAll).execute();
             Log.d(TAG, "Returned from server function");
         } catch (IOException e) {
-            // Exception...
+
         }
         return null;
     }

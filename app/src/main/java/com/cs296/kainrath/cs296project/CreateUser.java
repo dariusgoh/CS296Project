@@ -88,9 +88,7 @@ public class CreateUser extends AppCompatActivity implements
             userInfoReceiver.setReceiver(this);
             intent.putExtra(RegistrationIntentService.REQUEST_RESULT, userInfoReceiver);
             startService(intent); // Get registration token
-            // new AsyncGetUser(this).execute(acct.getId(), acct.getEmail());
             setContentView(R.layout.activity_loading_user);
-            //startActivity(new Intent(this, MainActivity.class));
         } else {
             Toast.makeText(this, "Unable to sign in", Toast.LENGTH_SHORT).show();
         }
@@ -105,7 +103,7 @@ public class CreateUser extends AppCompatActivity implements
 
     @Override
     public void onReceiveResult(int resultCode, Bundle resultData) {
-        if (googleClient.isConnected()) {
+        if (googleClient.isConnected()) { // Logout once user is logged in, just need userId and Email
             Auth.GoogleSignInApi.signOut(googleClient).setResultCallback(
                     new ResultCallback<Status>() {
                         @Override

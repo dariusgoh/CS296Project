@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+/*
+ * Service that receives the GCM notifications
+ */
 public class UserListenerService extends GcmListenerService {
     private static String TAG = "GCM Listener Service";
 
@@ -25,28 +28,27 @@ public class UserListenerService extends GcmListenerService {
             return;
         }
 
-        // TODO: RETRIEVE AND STORE EMAIL
         String action = data.getString("Action");
         int chatId = Integer.parseInt(data.getString("ChatId"));
-        String email = data.getString("Email");
-        if (action.equals("LeavingGroup")) {
+        String recvd_email = data.getString("Email");
+        String user_email = GlobalVars.getUser().getEmail();
+        if (action.equals("LeavingGroup") && !recvd_email.equals(user_email)) {
             Log.d(TAG, "A user is leaving a group");
-            GlobalVars.removeFromGroup(chatId, email);
-            this.sendBroadcast(new Intent("ChatUpdate"));
-        } else if (action.equals("JoiningGroup")) {
+            GlobalVars.removeFromGroup(chatId, recvd_email);
+            this.sendBroadcast(new Intent("ChatUpdate")); // send broadcast to MainActivity list
+        } else if (action.equals("JoiningGroup") && !recvd_email.equals(user_email)) {
             Log.d(TAG, "A user is joining a group");
-            GlobalVars.addToGroup(chatId, email);
-            this.sendBroadcast(new Intent("ChatUpdate"));
+            GlobalVars.addToGroup(chatId, recvd_email);
+            this.sendBroadcast(new Intent("ChatUpdate")); // Send broadcast to MainActivity list
         } else if (action.equals("NewMessage")) {
             Log.d(TAG, "Received a message from a chat group");
-            GlobalVars.addMessage(chatId, email, data.getString("Message"));
+            GlobalVars.addMessage(chatId, recvd_email, data.getString("Message"));
             Intent intent = new Intent("MessageUpdate");
             intent.putExtra("ChatId", chatId);
-            this.sendBroadcast(intent);
+            this.sendBroadcast(intent);                   // Send broadcast to ChatGroupActivity list
         } else {
             Log.d(TAG, "Received unknown gcm message");
             return;
         }
-
     }
 }

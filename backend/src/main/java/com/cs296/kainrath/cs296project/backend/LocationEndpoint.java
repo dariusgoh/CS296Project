@@ -39,16 +39,13 @@ import javax.inject.Named;
 )
 public class LocationEndpoint {
 
-    //private static final int MYSQL_DUPLICATE_CODE = 1062;
     private static final Logger logger = Logger.getLogger(LocationEndpoint.class.getName());
     private static final String url = "jdbc:google:mysql://cs296-backend:cs296-app-location-data/UserLocation?user=root";
     private static final String API_KEY = "AIzaSyAJuwfy0EoirghnDaThupzrqNTDVxsm650";
 
-    private static final double DIST = 100;
-
-    // Pre-calculated values
+    // A user or chatgroup's radius
+    private static final double DIST = 25;
     private static final double RAD_EARTH = 6371000; // In meters
-    private static final double ANG_DIST = DIST / RAD_EARTH;
 
     /**
      * This method gets the location of the user with the specified ID.  If the user is offline,
@@ -97,12 +94,12 @@ public class LocationEndpoint {
     public ChatGroupList updateLocation(@Named("user_id") String user_id, @Named("email") String email,
                                         @Named("lat") double lat, @Named("lon") double lon,
                                         @Named("interests") List<String> interests,
-                                        @Named("token") String token, ChatGroupList chatGroupList) {
+                                        @Named("token") String token, @Named("chatIdsString") String chatIdsString) {
         if (interests == null || interests.isEmpty()) { // Need to have some interests
             return null;
         }
 
-        // Interests is comma separated, single String, not a list for some reason
+        // Interests is comma separated, single String, not a list of Strings for some reason
         String ints = interests.get(0);
         String[] split_interests = ints.split(",");
         interests.clear();
@@ -110,22 +107,33 @@ public class LocationEndpoint {
             interests.add(s);
         }
 
-        boolean firstUpdate = (chatGroupList == null) || (chatGroupList.getChatGroups() == null) || (chatGroupList.getChatGroups().isEmpty());
+        // Was sending a list of chatGroups, but the list was always empty
+        // If chatIdsString is empty, the user just activated
+        // If chatIdsString is not empty, the user's location updated but the user was already "active"
+        boolean firstUpdate = chatIdsString.equals(" ");
+        List<Integer> currChatIds = null;
+        if (!firstUpdate) {
+            String[] parsedChatIds = chatIdsString.split(",");
+            currChatIds = new ArrayList<>();
+            for (String s : parsedChatIds) {
+                currChatIds.add(Integer.parseInt(s));
+            }
+        }
+
         Location userLocation = new Location(user_id, lat, lon);
         Connection conn;
-        double oldLat = -200, oldLong = -200;
-        try {
+        double oldLat = -200, oldLong = -200; // Values will be changed if the user was already active
+        try { // Create a connection to the database
             Class.forName("com.mysql.jdbc.GoogleDriver");
             conn = DriverManager.getConnection(url);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             return null;
         } catch (SQLException e) {
-            String error = e.getSQLState();
+            String error = e.getSQLState(); // This is here for debugging purposes (cloud debugger)
             return null;
         }
 
-        // UPDATE LOCATION IN THE DATABASE
         String updateLoc;
         if (firstUpdate) { // Just activated
             updateLoc = "UPDATE UserInfo SET Latitude=" + lat + ", Longitude=" + lon +
@@ -146,60 +154,51 @@ public class LocationEndpoint {
             updateLoc = "UPDATE UserInfo SET Latitude=" + lat + ", Longitude=" + lon +
                     " WHERE UserId=\"" + user_id + "\"";
         }
-        try {
+        try { // Update location in the database
             conn.createStatement().executeUpdate(updateLoc);
         } catch (SQLException e) {
             String error = e.getSQLState();
             return null;
         }
 
-        List<ChatGroup> currChatGroups;
-        if (!firstUpdate) {
-            currChatGroups = updateCurrentChatGroups(conn, chatGroupList.getChatGroups(), userLocation, oldLat, oldLong, email);
-        } else {
-            currChatGroups = new ArrayList<>();
-        }
+        // Get nearby chat groups
+        List<ChatGroup> nearbyChats = findChatGroupsInRadius(conn, userLocation);
 
-        // Get nearby chats that you are not already in
-        List<ChatGroup> newNearbyChats = findNewChatGroupsInRadius(conn, userLocation, currChatGroups);
 
         // Compare interests to see if they match with any new nearby chats
-        if (!newNearbyChats.isEmpty()) {
-            int nearbyChatSize = newNearbyChats.size(); // For debugging purposes
+        if (nearbyChats != null && !nearbyChats.isEmpty()) {
+            int nearbyChatSize = nearbyChats.size(); // For debugging purposes
             int matchingSize = 0; // For debugging purposes
             String interest_debug = "";
-            Iterator<ChatGroup> iter = newNearbyChats.iterator();
+            Iterator<ChatGroup> iter = nearbyChats.iterator();
             while (iter.hasNext()) {
                 ChatGroup chat = iter.next();
                 interest_debug += ":" + chat.getInterest();
-                if (!interests.contains(chat.getInterest())) {
+                if (currChatIds != null && currChatIds.contains(chat.getChatId())) { // Already in chatGroup
+                    if (updateCurrentChatGroup(conn, chat, userLocation, oldLat, oldLong, email)) {
+                        iter.remove(); // User outside group range
+                    }
+                } else if (interests.contains(chat.getInterest())) { // New chatGroup with matching interest
+                    joinNewGroup(conn, chat, userLocation, token, email);
+                } else { // Non-matching group
                     iter.remove();
                 }
             }
-
-            // Update new groups and notify users
-            if (!newNearbyChats.isEmpty()) {
-                int newSize = newNearbyChats.size(); // For debug purposes
-                joinNewGroups(conn, newNearbyChats, userLocation, token, email);
-            }
         }
-        currChatGroups.addAll(newNearbyChats);
 
         // Start a chat group for any interests that don't already have a chatgroup
-        if (firstUpdate) {
-            List<String> unmatchedInterests = new ArrayList<>();
-            unmatchedInterests.addAll(interests);
-            for (ChatGroup chat : currChatGroups) {
-                unmatchedInterests.remove(chat.getInterest());
-            }
-            if (!unmatchedInterests.isEmpty()) {
-                currChatGroups.addAll(startNewChatGroups(conn, unmatchedInterests, lat, lon, token, user_id, email));
-            }
+        List<String> unmatchedInterests = new ArrayList<>();
+        unmatchedInterests.addAll(interests);
+        for (ChatGroup chat : nearbyChats) { // Remove interests that are already covered by another chatGroup
+            unmatchedInterests.remove(chat.getInterest());
+        }
+        if (!unmatchedInterests.isEmpty()) { // Unmatched interests, start new chatGroup
+            nearbyChats.addAll(startNewChatGroups(conn, unmatchedInterests, lat, lon, token, user_id, email));
         }
 
-        ChatGroupList groupList = new ChatGroupList(currChatGroups);
+        ChatGroupList groupList = new ChatGroupList(nearbyChats);
 
-        try {
+        try { // Close connection
             conn.close();
         } catch (SQLException e) {
             String error = e.getSQLState();
@@ -232,7 +231,7 @@ public class LocationEndpoint {
             Class.forName("com.mysql.jdbc.GoogleDriver");
             conn = DriverManager.getConnection(url);
 
-            // GET CHATGROUP INFORMATION
+            // Get ChatGroup information
             String groupQuery = "SELECT * FROM ChatGroups WHERE ChatId=" + chatIds.get(0);
             for (int i = 1; i < chatIds.size(); ++i) {
                 groupQuery += " OR ChatId=" + chatIds.get(i);
@@ -244,8 +243,6 @@ public class LocationEndpoint {
                         groupSet.getInt("GroupSize"), groupSet.getDouble("Latitude"), groupSet.getDouble("Longitude"));
                 currChatGroups.add(group);
             }
-
-
 
             // Make user "Offline"
             String offlineUpdate = "UPDATE UserInfo SET Active=\"N\" WHERE UserId=\"" + user_id + "\"";
@@ -272,7 +269,7 @@ public class LocationEndpoint {
                         leaveChatGroup(conn, user_id, email, group);
                     }
                 }
-                if (removed) {
+                if (removed) { // Destroy the chatGroups where the user is the only member
                     Statement stmt = conn.createStatement();
                     stmt.addBatch(destroyChatGroupUpdate);
                     stmt.addBatch(destroyChatUserUpdate);
@@ -326,49 +323,44 @@ public class LocationEndpoint {
         return newGroups;
     }
 
-    private void joinNewGroups(Connection conn, List<ChatGroup> chatGroups, Location userLoc, String token, String email) {
+    private void joinNewGroup(Connection conn, ChatGroup chat, Location userLoc, String token, String email) {
         try {
-            // Create once for sending GCM messages
-            Sender sender = new Sender(API_KEY);
+            chat.addUserToGroup(email, userLoc.getLatitude(), userLoc.getLongitude());
+            String chatUserUpdate = "INSERT INTO ChatUsers (ChatId, UserId, Token, Email) VALUES (" + chat.getChatId() +", " +
+                    "\"" + userLoc.getUser_id() + "\", \"" + token + "\", \"" + email + "\")";
+            String chatGroupUpdate = "UPDATE ChatGroups SET Latitude=" + chat.getLatitude() + ", Longitude=" + chat.getLongitude() +
+                    ", GroupSize=GroupSize + 1 WHERE ChatId=" + chat.getChatId();
+            Statement stmt = conn.createStatement();
+            stmt.addBatch(chatGroupUpdate);
+            stmt.addBatch(chatUserUpdate);
+            stmt.executeBatch();
 
-            for (ChatGroup chat : chatGroups) {
-                chat.addUserToGroup(email, userLoc.getLatitude(), userLoc.getLongitude());
-                String chatUserUpdate = "INSERT INTO ChatUsers (ChatId, UserId, Token, Email) VALUES (" + chat.getChatId() +", " +
-                        "\"" + userLoc.getUser_id() + "\", \"" + token + "\", \"" + email + "\")";
-                String chatGroupUpdate = "UPDATE ChatGroups SET Latitude=" + chat.getLatitude() + ", Longitude=" + chat.getLongitude() +
-                        ", GroupSize=" + chat.getGroupSize() + " WHERE ChatId=" + chat.getChatId();
-                Statement stmt = conn.createStatement();
-                stmt.addBatch(chatGroupUpdate);
-                stmt.addBatch(chatUserUpdate);
-                stmt.executeBatch();
-
-                String tokenQuery = "SELECT Token, Email FROM ChatUsers WHERE ChatId=" + chat.getChatId();
-                ResultSet tokenSet = conn.createStatement().executeQuery(tokenQuery);
-                List<String> tokens = new ArrayList<>();
-                while (tokenSet.next()) {
-                    tokens.add(tokenSet.getString("Token"));
-                    chat.putCurrMember(tokenSet.getString("Email"));
-                }
-                // Send GCM Message
-                Message msg = new Message.Builder().addData("UserId", userLoc.getUser_id()).addData("Email", email)
-                        .addData("ChatId", "" + chat.getChatId()).addData("Action", "JoiningGroup").build();
-                try {
-                    MulticastResult result = sender.send(msg, tokens, 3);
-                } catch (IOException e) {
-                    String error = e.getMessage();
-                }
+            String tokenQuery = "SELECT Token, Email FROM ChatUsers WHERE ChatId=" + chat.getChatId();
+            ResultSet tokenSet = conn.createStatement().executeQuery(tokenQuery);
+            List<String> tokens = new ArrayList<>();
+            while (tokenSet.next()) {
+                tokens.add(tokenSet.getString("Token"));
+                chat.putCurrMember(tokenSet.getString("Email"));
             }
 
+            // Send GCM Message
+            Sender sender = new Sender(API_KEY);
+            Message msg = new Message.Builder().addData("UserId", userLoc.getUser_id()).addData("Email", email)
+                    .addData("ChatId", "" + chat.getChatId()).addData("Action", "JoiningGroup").build();
+            MulticastResult result = sender.send(msg, tokens, 3);
         } catch (SQLException e) {
             String error = e.getSQLState();
+        } catch (IOException e) {
+            String error = e.getMessage();
         }
     }
 
-    private List<ChatGroup> findNewChatGroupsInRadius(Connection conn, Location userLoc, List<ChatGroup> currGroups) {
+    private List<ChatGroup> findChatGroupsInRadius(Connection conn, Location userLoc) {
+        double ang_dist = DIST / RAD_EARTH;
         double latitude = userLoc.getLatitude();
         double longitude = userLoc.getLongitude();
-        double ang_cos = Math.cos(ANG_DIST);
-        double ang_sin = Math.sin(ANG_DIST);
+        double ang_cos = Math.cos(ang_dist);
+        double ang_sin = Math.sin(ang_dist);
         double sin_lat1 = Math.sin(latitude * Math.PI / 180); // Need radians
         double cos_lat1 = Math.cos(latitude * Math.PI / 180); // Need radians    1 = Cos(0)
         double dLat = Math.abs(Math.asin(sin_lat1 * ang_cos + cos_lat1 * ang_sin * 1) * 180 / Math.PI - latitude);
@@ -383,14 +375,9 @@ public class LocationEndpoint {
         List<ChatGroup> nearbyChatGroups = new ArrayList<>();
         ChatGroup nearbyGroup; // Placed here for debug purposes
         try {
-            // GET CHATGROUPS NEAR USER
+            // Get chatGroups near user
             String groupQuery = "SELECT * FROM ChatGroups WHERE Latitude BETWEEN " + lat2 + " AND " + lat1 +
                     " AND Longitude BETWEEN " + long2 + " AND " + long1;
-            if (currGroups != null) {
-                for (int i = 0; i < currGroups.size(); ++i) {
-                    groupQuery += " AND ChatId != " + currGroups.get(i).getChatId();
-                }
-            }
 
             ResultSet rs = conn.createStatement().executeQuery(groupQuery);
 
@@ -406,25 +393,26 @@ public class LocationEndpoint {
         return nearbyChatGroups;
     }
 
-    private List<ChatGroup> updateCurrentChatGroups(Connection conn, List<ChatGroup> currGroups, Location userLoc,
+    // Returns true if the user left the group and should be removed from the group
+    private boolean updateCurrentChatGroup(Connection conn, ChatGroup currGroup, Location userLoc,
                                                     double oldLat, double oldLong, String email) {
-        for (ChatGroup group : currGroups) {
-            group.moveMember(oldLat, oldLong, userLoc.getLatitude(), userLoc.getLongitude());
-            double newDist = userLoc.distanceTo(group.getLatitude(), group.getLongitude());
-            if (newDist > DIST && group.getGroupSize() > 1) {
-                group.removeUserFromGroup(email, oldLat, oldLong);
-                leaveChatGroup(conn, userLoc.getUser_id(), email, group);
-            } else {
-                try {
-                    String updateGroup = "UPDATE ChatGroups SET Latitude=" + group.getLatitude() + ", Longitude=" + group.getLongitude() +
-                            " WHERE ChatId=" + group.getChatId();
-                    conn.createStatement().executeUpdate(updateGroup);
-                } catch (SQLException e) {
-                    String error = e.getSQLState();
-                }
+        // Get chats that the user is in
+        currGroup.moveMember(oldLat, oldLong, userLoc.getLatitude(), userLoc.getLongitude());
+        double newDist = userLoc.distanceTo(currGroup.getLatitude(), currGroup.getLongitude());
+        if (newDist > DIST && currGroup.getGroupSize() > 1) { // Out of group range
+            currGroup.removeUserFromGroup(email, oldLat, oldLong); // If only 1 user, then the location of the group will just be the users new location
+            leaveChatGroup(conn, userLoc.getUser_id(), email, currGroup);
+            return true;
+        } else {
+            try { // Still in group range
+                String updateGroup = "UPDATE ChatGroups SET Latitude=" + currGroup.getLatitude() + ", Longitude=" + currGroup.getLongitude() +
+                        " WHERE ChatId=" + currGroup.getChatId();
+                conn.createStatement().executeUpdate(updateGroup);
+            } catch (SQLException e) {
+                String error = e.getSQLState();
             }
+            return false;
         }
-        return currGroups;
     }
 
     private void leaveChatGroup(Connection conn, String user_id, String email, ChatGroup group) {
@@ -433,7 +421,7 @@ public class LocationEndpoint {
             String deleteChatUser = "DELETE FROM ChatUsers WHERE UserId=\"" + user_id + "\" AND ChatId=" +
                     group.getChatId();
             String updateChatGroup = "UPDATE ChatGroups SET Latitude=" + group.getLatitude() + ", Longitude=" + group.getLongitude() +
-                    ", GroupSize=" + group.getGroupSize() + " WHERE ChatId=" + group.getChatId();
+                    ", GroupSize=GroupSize - 1 WHERE ChatId=" + group.getChatId();
             stmt.addBatch(deleteChatUser);
             stmt.addBatch(updateChatGroup);
             stmt.executeBatch();

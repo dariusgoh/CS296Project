@@ -73,7 +73,6 @@
             android:enabled="true"
             android:exported="false" />
 
-        <activity android:name=".ChatActivity" />
         <activity android:name=".ChatGroupActivity" android:screenOrientation="portrait"></activity>
     </application>
 

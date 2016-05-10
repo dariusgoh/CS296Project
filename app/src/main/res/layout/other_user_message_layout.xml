@@ -26,7 +26,7 @@
             android:layout_below="@id/other_user_name"
             android:textColor="#000000"
             android:textSize="20sp"
-            android:layout_marginBottom="15dp"
+            android:layout_marginBottom="17dp"
             android:layout_marginRight="10dp"
             android:layout_marginLeft="35dp" />
 
